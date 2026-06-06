@@ -2,6 +2,8 @@
 
 Implementacao do desafio tecnico Full-stack Crash Game. Jogo crash multiplayer com dois servicos backend NestJS, comunicacao assincrona via RabbitMQ, tempo real com WebSocket, carteira, autenticacao via Keycloak, Docker e frontend React.
 
+> **Commit style:** Este repositorio segue o padrao global definido por Linus Torvalds para mensagens de commit — imperativo, linha de assunto curta (ate 50 caracteres), corpo explicando o que e por que (nao como), e atomico (um cambio logico por commit). Acreditamos que um historico Git limpo e expressivo e parte essencial da engenharia de software.
+
 ## Stack
 
 Bun 1.3, NestJS 11, TypeScript strict, PostgreSQL 18, RabbitMQ, Kong, Keycloak, WebSocket (Socket.IO), React 19 + Vite + TypeScript.
