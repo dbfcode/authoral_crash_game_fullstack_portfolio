@@ -1,0 +1,36 @@
+{
+  "name": "@crash/games",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "bun run nest build",
+    "dev": "bun run nest start --watch",
+    "start": "bun run nest start",
+    "start:prod": "node dist/main",
+    "test": "bun test tests/unit && bun test tests/e2e",
+    "test:unit": "bun test tests/unit",
+    "test:e2e": "bun test tests/e2e",
+    "lint": "echo ok"
+  },
+  "dependencies": {
+    "@nestjs/common": "11.0.11",
+    "@nestjs/core": "11.0.11",
+    "@nestjs/platform-express": "11.0.11",
+    "@nestjs/websockets": "11.0.11",
+    "@nestjs/platform-socket.io": "11.0.11",
+    "@nestjs/microservices": "11.0.11",
+    "@nestjs/swagger": "11.0.3",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "amqplib": "^0.10.7",
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "11.0.6",
+    "@nestjs/testing": "11.0.11",
+    "typescript": "^5.7.0",
+    "@types/bun": "latest",
+    "@types/amqplib": "^0.10.7",
+    "bun-types": "latest"
+  }
+}
