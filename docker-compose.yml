@@ -1,0 +1,139 @@
+services:
+  postgres:
+    image: postgres:18.3-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: crash
+      POSTGRES_PASSWORD: crash
+      POSTGRES_MULTIPLE_DATABASES: games,wallets
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crash"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:4.2.4-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: crash
+      RABBITMQ_DEFAULT_PASS: crash
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.5.5
+    ports:
+      - "8080:8080"
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HOSTNAME: localhost
+      KC_HTTP_PORT: 8080
+      KC_HEALTH_ENABLED: "true"
+    volumes:
+      - ./docker/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+    command: start-dev --import-realm
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  kong-migrations:
+    image: kong:3.9.1
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: postgres
+      KONG_PG_USER: crash
+      KONG_PG_PASSWORD: crash
+      KONG_PG_DATABASE: kong
+    command: kong migrations bootstrap
+    restart: on-failure
+
+  kong:
+    image: kong:3.9.1
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kong-migrations:
+        condition: service_completed_successfully
+    environment:
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: postgres
+      KONG_PG_USER: crash
+      KONG_PG_PASSWORD: crash
+      KONG_PG_DATABASE: kong
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_DECLARATIVE_CONFIG: /etc/kong/kong.yml
+    volumes:
+      - ./docker/kong/kong.yml:/etc/kong/kong.yml:ro
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  game-service:
+    build:
+      context: ./services/games
+      dockerfile: Dockerfile
+    ports:
+      - "4001:4001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    environment:
+      GAMES_PORT: 4001
+      GAMES_DB_URL: postgresql://crash:crash@postgres:5432/games
+      RABBITMQ_URL: amqp://crash:crash@rabbitmq:5672
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_REALM: crash-game
+      KEYCLOAK_CLIENT_ID: crash-game-client
+
+  wallet-service:
+    build:
+      context: ./services/wallets
+      dockerfile: Dockerfile
+    ports:
+      - "4002:4002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    environment:
+      WALLETS_PORT: 4002
+      WALLETS_DB_URL: postgresql://crash:crash@postgres:5432/wallets
+      RABBITMQ_URL: amqp://crash:crash@rabbitmq:5672
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_REALM: crash-game
+      KEYCLOAK_CLIENT_ID: crash-game-client
+
+volumes:
+  postgres-data:
