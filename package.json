@@ -1,0 +1,17 @@
+{
+  "name": "crash-game-fullstack",
+  "private": true,
+  "workspaces": [
+    "services/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "docker:up": "docker compose up -d --build",
+    "docker:down": "docker compose down",
+    "docker:prune": "docker compose down -v --rmi all",
+    "test": "bun run --workspaces test",
+    "test:unit": "bun run --workspaces test:unit",
+    "test:e2e": "bun run --workspaces test:e2e",
+    "lint": "bun run --workspaces lint"
+  }
+}
