@@ -16,12 +16,14 @@ export class RoundBootstrapService implements OnModuleInit {
   ) {}
 
   async onModuleInit(): Promise<void> {
+    await this.gameState.initialize();
+
     const current = await this.roundRepository.findCurrent();
     if (current) {
       return;
     }
 
-    const chain = this.gameState.getOrCreateChain();
+    const chain = this.gameState.getChain();
     const commit = chain.commit(this.gameState.getChainIndex());
     const roundId = randomUUID();
 

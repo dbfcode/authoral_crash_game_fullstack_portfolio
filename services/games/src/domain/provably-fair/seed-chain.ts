@@ -66,4 +66,8 @@ export class SeedChain {
     this._currentIndex += 1;
     return this.commit();
   }
+
+  exportSnapshot(): { seeds: readonly string[]; currentIndex: number } {
+    return { seeds: this.seeds, currentIndex: this._currentIndex };
+  }
 }

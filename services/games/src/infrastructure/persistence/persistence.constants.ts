@@ -1,3 +1,5 @@
 export const PG_POOL = Symbol('PG_POOL');
 export const ROUND_REPOSITORY = Symbol('ROUND_REPOSITORY');
 export const BET_REPOSITORY = Symbol('BET_REPOSITORY');
+export const CHAIN_STATE_REPOSITORY = Symbol('CHAIN_STATE_REPOSITORY');
+export const PROCESSED_EVENT_REPOSITORY = Symbol('PROCESSED_EVENT_REPOSITORY');

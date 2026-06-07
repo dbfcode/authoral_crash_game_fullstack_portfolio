@@ -19,11 +19,14 @@ import {
   RABBITMQ_CONNECTION,
 } from './infrastructure/messaging/messaging.constants';
 import { InMemoryBetRepository } from './infrastructure/persistence/in-memory-bet.repository';
+import { InMemoryChainStateRepository } from './infrastructure/persistence/in-memory-chain-state.repository';
 import { InMemoryRoundRepository } from './infrastructure/persistence/in-memory-round.repository';
 import { PostgresBetRepository } from './infrastructure/persistence/postgres-bet.repository';
+import { PostgresChainStateRepository } from './infrastructure/persistence/postgres-chain-state.repository';
 import { PostgresRoundRepository } from './infrastructure/persistence/postgres-round.repository';
 import {
   BET_REPOSITORY,
+  CHAIN_STATE_REPOSITORY,
   PG_POOL,
   ROUND_REPOSITORY,
 } from './infrastructure/persistence/persistence.constants';
@@ -33,6 +36,10 @@ const useInMemoryPersistence = process.env.GAMES_USE_IN_MEMORY === '1';
 
 const persistenceProviders = useInMemoryPersistence
   ? [
+      {
+        provide: CHAIN_STATE_REPOSITORY,
+        useClass: InMemoryChainStateRepository,
+      },
       {
         provide: ROUND_REPOSITORY,
         useFactory: () => new InMemoryRoundRepository(),
@@ -59,6 +66,11 @@ const persistenceProviders = useInMemoryPersistence
           await runGameMigrations(pool);
           return pool;
         },
+      },
+      {
+        provide: CHAIN_STATE_REPOSITORY,
+        useFactory: (pool: Pool) => new PostgresChainStateRepository(pool),
+        inject: [PG_POOL],
       },
       {
         provide: ROUND_REPOSITORY,
