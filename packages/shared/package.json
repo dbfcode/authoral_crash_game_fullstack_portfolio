@@ -1,0 +1,11 @@
+{
+  "name": "@crash/shared",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "echo ok",
+    "test:unit": "echo ok",
+    "test:e2e": "echo ok",
+    "lint": "echo ok"
+  }
+}
