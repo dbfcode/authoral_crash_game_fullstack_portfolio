@@ -3,8 +3,11 @@ import { randomUUID } from 'crypto';
 import { PROVABLY_FAIR_ALGORITHM_VERSION } from '../domain/provably-fair';
 import { Round } from '../domain/round';
 import { ROUND_REPOSITORY } from '../infrastructure/persistence/persistence.constants';
+import { GAME_REALTIME_PUBLISHER } from '../infrastructure/websocket/websocket.constants';
+import { toBettingStartedPayload } from './mappers/round-ws.mapper';
 import { RoundRecord } from './models/round-record';
 import type { RoundRepository } from './ports/round.repository';
+import type { GameRealtimePublisher } from './ports/game-realtime.publisher';
 import { GameStateService } from './game-state.service';
 
 @Injectable()
@@ -13,6 +16,8 @@ export class RoundBootstrapService implements OnModuleInit {
     @Inject(ROUND_REPOSITORY)
     private readonly roundRepository: RoundRepository,
     private readonly gameState: GameStateService,
+    @Inject(GAME_REALTIME_PUBLISHER)
+    private readonly realtime: GameRealtimePublisher,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -45,5 +50,6 @@ export class RoundBootstrapService implements OnModuleInit {
     };
 
     await this.roundRepository.save(record);
+    this.realtime.broadcastBettingStarted(toBettingStartedPayload(record));
   }
 }

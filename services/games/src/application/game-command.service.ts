@@ -7,8 +7,11 @@ import { Multiplier } from '../domain/multiplier';
 import { RoundStatus } from '../domain/round-status';
 import { ROUND_REPOSITORY } from '../infrastructure/persistence/persistence.constants';
 import { GAME_EVENT_PUBLISHER } from '../infrastructure/messaging/messaging.constants';
+import { GAME_REALTIME_PUBLISHER } from '../infrastructure/websocket/websocket.constants';
+import { toBetCashoutPayload, toBetPlacedPayload } from './mappers/round-ws.mapper';
 import type { RoundRepository } from './ports/round.repository';
 import type { GameEventPublisher } from './ports/game-event.publisher';
+import type { GameRealtimePublisher } from './ports/game-realtime.publisher';
 import { RoundLockService } from './round-lock.service';
 
 @Injectable()
@@ -18,6 +21,8 @@ export class GameCommandService {
     private readonly roundRepository: RoundRepository,
     @Inject(GAME_EVENT_PUBLISHER)
     private readonly eventPublisher: GameEventPublisher,
+    @Inject(GAME_REALTIME_PUBLISHER)
+    private readonly realtime: GameRealtimePublisher,
     private readonly roundLock: RoundLockService,
   ) {}
 
@@ -36,13 +41,15 @@ export class GameCommandService {
       }
 
       const betId = randomUUID();
-      record.round.placeBet({
+      const bet = record.round.placeBet({
         betId,
         playerId,
         amountCents,
       });
 
       await this.roundRepository.save(record);
+
+      this.realtime.broadcastBetPlaced(toBetPlacedPayload(bet));
 
       await this.eventPublisher.publishBetPlacedRequested(
         {
@@ -88,6 +95,8 @@ export class GameCommandService {
 
       const bet = record.round.cashOut({ playerId, atMultiplier: multiplier });
       await this.roundRepository.save(record);
+
+      this.realtime.broadcastBetCashout(toBetCashoutPayload(bet, multiplier));
 
       await this.eventPublisher.publishCashoutRequested(
         {

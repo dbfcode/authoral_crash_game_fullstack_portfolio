@@ -8,7 +8,13 @@ import {
 import { BetStatus } from '../../domain/bet-status';
 import { RoundStatus } from '../../domain/round-status';
 import { ROUND_REPOSITORY } from '../../infrastructure/persistence/persistence.constants';
+import { GAME_REALTIME_PUBLISHER } from '../../infrastructure/websocket/websocket.constants';
+import {
+  toBetPlacedPayload,
+  toBetRemovedPayload,
+} from '../mappers/round-ws.mapper';
 import type { RoundRepository } from '../ports/round.repository';
+import type { GameRealtimePublisher } from '../ports/game-realtime.publisher';
 import { RoundLockService } from '../round-lock.service';
 
 @Injectable()
@@ -16,6 +22,8 @@ export class GameEventHandlerService {
   constructor(
     @Inject(ROUND_REPOSITORY)
     private readonly roundRepository: RoundRepository,
+    @Inject(GAME_REALTIME_PUBLISHER)
+    private readonly realtime: GameRealtimePublisher,
     private readonly roundLock: RoundLockService,
   ) {}
 
@@ -35,8 +43,10 @@ export class GameEventHandlerService {
         return;
       }
 
-      record.round.updateBet(bet.confirm());
+      const confirmed = bet.confirm();
+      record.round.updateBet(confirmed);
       await this.roundRepository.save(record);
+      this.realtime.broadcastBetPlaced(toBetPlacedPayload(confirmed));
     });
   }
 
@@ -55,6 +65,9 @@ export class GameEventHandlerService {
       if (bet.status === BetStatus.PENDING) {
         record.round.removeBet(payload.playerId);
         await this.roundRepository.save(record);
+        this.realtime.broadcastBetRemoved(
+          toBetRemovedPayload(payload.betId, payload.roundId, payload.playerId),
+        );
       }
     });
   }
@@ -99,8 +112,10 @@ export class GameEventHandlerService {
         return;
       }
 
-      record.round.updateBet(bet.revertCashout());
+      const reverted = bet.revertCashout();
+      record.round.updateBet(reverted);
       await this.roundRepository.save(record);
+      this.realtime.broadcastBetPlaced(toBetPlacedPayload(reverted));
     });
   }
 }

@@ -20,12 +20,22 @@ import { Round } from '../domain/round';
 import { RoundStatus } from '../domain/round-status';
 import { BetStatus } from '../domain/bet-status';
 import { GAME_EVENT_PUBLISHER } from '../infrastructure/messaging/messaging.constants';
-import { ROUND_REPOSITORY } from '../infrastructure/persistence/persistence.constants';
+import { GAME_REALTIME_PUBLISHER } from '../infrastructure/websocket/websocket.constants';
 import type { GameEventPublisher } from './ports/game-event.publisher';
+import type { GameRealtimePublisher } from './ports/game-realtime.publisher';
 import type { RoundRepository } from './ports/round.repository';
 import { RoundRecord } from './models/round-record';
+import {
+  toBettingStartedPayload,
+  toHistoryItems,
+  toRoundCrashedPayload,
+  toRoundSettledPayload,
+  toRoundStartedPayload,
+  toRoundTickPayload,
+} from './mappers/round-ws.mapper';
 import { GameStateService } from './game-state.service';
 import { RoundLockService } from './round-lock.service';
+import { ROUND_REPOSITORY } from '../infrastructure/persistence/persistence.constants';
 
 function envInt(name: string, fallback: number): number {
   const raw = process.env[name];
@@ -67,6 +77,8 @@ export class RoundEngineService implements OnModuleInit, OnModuleDestroy {
     private readonly roundRepository: RoundRepository,
     @Inject(GAME_EVENT_PUBLISHER)
     private readonly eventPublisher: GameEventPublisher,
+    @Inject(GAME_REALTIME_PUBLISHER)
+    private readonly realtime: GameRealtimePublisher,
     private readonly gameState: GameStateService,
     private readonly roundLock: RoundLockService,
   ) {}
@@ -154,6 +166,7 @@ export class RoundEngineService implements OnModuleInit, OnModuleDestroy {
       latest.round.startRunning();
 
       await this.roundRepository.save(latest);
+      this.realtime.broadcastRoundStarted(toRoundStartedPayload(latest));
     });
   }
 
@@ -193,6 +206,9 @@ export class RoundEngineService implements OnModuleInit, OnModuleDestroy {
 
         fresh.fairness.currentMultiplierHundredths = current.hundredths;
         await this.roundRepository.save(fresh);
+        this.realtime.broadcastTick(
+          toRoundTickPayload(fresh.round.id, current),
+        );
       });
     }
 
@@ -204,6 +220,7 @@ export class RoundEngineService implements OnModuleInit, OnModuleDestroy {
 
       fresh.round.crash({ crashMultiplier: crashPoint! });
       await this.roundRepository.save(fresh);
+      this.realtime.broadcastCrashed(toRoundCrashedPayload(fresh));
       await this.revealAndPrepareNextRound(fresh);
     });
   }
@@ -226,6 +243,10 @@ export class RoundEngineService implements OnModuleInit, OnModuleDestroy {
   private async revealAndPrepareNextRound(record: RoundRecord): Promise<void> {
     record.round.settle();
     await this.roundRepository.save(record);
+    this.realtime.broadcastSettled(toRoundSettledPayload(record));
+
+    const history = await this.roundRepository.findHistory(20, 0);
+    this.realtime.broadcastHistoryUpdated({ items: toHistoryItems(history) });
 
     for (const bet of record.round.bets) {
       if (bet.status === BetStatus.LOST) {
@@ -266,5 +287,6 @@ export class RoundEngineService implements OnModuleInit, OnModuleDestroy {
     };
 
     await this.roundRepository.save(nextRecord);
+    this.realtime.broadcastBettingStarted(toBettingStartedPayload(nextRecord));
   }
 }
