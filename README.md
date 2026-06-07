@@ -80,7 +80,7 @@ Relatorios locais de teste ficam em `test-runs/` (gitignored), com `summary.json
 - [x] `@crash/shared` com envelope tipado (`eventId`, `correlationId`, `timestamp`)
 - [x] Eventos: BetPlaced/Reserved/Rejected, Cashout Requested/Paid/Rejected, BetLostSettled, WalletCredited/Debited
 - [x] Exchange `crash.events` (topic) + filas `wallet-service.events` / `game-service.events`
-- [x] Wallet consumer publica respostas; Game consumer stubs registram eventos
+- [x] Wallet consumer publica respostas; Game consumer aplica reservas/cashouts (step 08)
 - [x] Idempotencia basica por `eventId` (`processed_events`)
 - [x] `amountCents` serializado como string no wire format
 - [x] Testes unitarios shared + messaging (40 testes no monorepo)
@@ -88,12 +88,12 @@ Relatorios locais de teste ficam em `test-runs/` (gitignored), com `summary.json
 ### Etapa 05 - Game Domain
 
 - [x] Agregado `Round` com estados `betting`, `running`, `crashed`, `settled`
-- [x] Entidade `Bet` com status `active`, `cashed_out`, `lost`
+- [x] Entidade `Bet` com status `pending`, `active`, `cashed_out`, `lost`, `rejected`
 - [x] Value objects `MoneyCents`, `Multiplier` (centesimos, sem float)
 - [x] Limites de aposta R$ 1,00 – R$ 1.000,00; uma aposta por jogador/rodada
 - [x] Cashout com payout `aposta × multiplicador`; crash marca perdas
 - [x] Testes unitarios de dominio (31 novos; 34 no `@crash/games`)
-- [ ] Integracao broker (etapa 08)
+- [x] Integracao broker (etapa 08)
 
 ### Etapa 06 - Provably Fair (hash chain)
 
@@ -106,7 +106,7 @@ Relatorios locais de teste ficam em `test-runs/` (gitignored), com `summary.json
 - [x] Integracao conceitual: `Round.crash({ crashMultiplier: computeCrashPoint(...) })`
 - [x] Testes unitarios (17 novos; 53 no `@crash/games` apos step 07)
 - [x] Persistencia PostgreSQL + `GET /verify` (step 07)
-- [ ] Runtime completo, WebSocket e UI (etapas 08–09, 14)
+- [x] Runtime completo via broker (step 08); WebSocket e UI (etapas 09, 14)
 
 ```text
 Provably Fair — rodada i (FairnessProof + SeedChain)
@@ -163,12 +163,32 @@ Secao completa de auditoria para o jogador: etapa 16 (README final).
 - [x] `DomainExceptionFilter` — erros de dominio mapeados para HTTP
 - [x] `RoundBootstrapService` — primeira rodada em `betting` com hash da `SeedChain`
 - [x] Testes unitarios + E2E REST iniciados (2 novos unit games; E2E games + wallets)
-- [ ] Gameplay broker completo (step 08)
+- [x] Gameplay broker completo (step 08)
+
+### Etapa 08 - Gameplay Broker Settlement
+
+- [x] Persistencia `chain_state` — `SeedChain` sobrevive a restart
+- [x] `RoundEngineService` — fases betting → closeBets → `computeCrashPoint` → running → crash → reveal
+- [x] Multiplicador autoritativo com tick configuravel (`GAMES_*` env vars)
+- [x] Apostas `pending` → broker `BetReserved`/`BetRejected` → `active`/removida
+- [x] Cashout via broker com payout correto (`CashoutRequested` → `CashoutPaid`)
+- [x] `BetLostSettled` publicado para apostas perdidas no crash
+- [x] Hash comprometido antes de betting; seed revelada apenas pos-crash
+- [x] Chain avanca deterministicamente; proxima rodada preparada com `nextRoundHash`
+- [x] `GameEventHandlerService` + idempotencia `processed_events` no Game
+- [x] Testes unitarios (round engine, handlers, chain persistence) + E2E broker
+- [x] Flag `GAMES_DISABLE_ROUND_ENGINE=1` para testes REST sem timers
+
+Variaveis de ambiente do runtime:
+
+- `GAMES_BETTING_DURATION_MS` (default `5000`)
+- `GAMES_MULTIPLIER_TICK_MS` (default `100`)
+- `GAMES_MULTIPLIER_STEP_HUNDREDTHS` (default `5`)
+- `GAMES_DISABLE_ROUND_ENGINE` (default `0`)
 
 ### Proximas etapas
 
-1. **Gameplay + Broker + Settlement** — runtime com `SeedChain` + broker
-2. **WebSocket** — tempo real (hash antes da rodada, seed apos crash)
+1. **WebSocket** — tempo real (hash antes da rodada, seed apos crash)
 3. **Auth JWT** — Keycloak integration (substituir `X-Player-Id`)
 4. **Testes finais + Docker**
 5. **Frontend** — UI completa (hash visivel, link verify)
@@ -176,10 +196,10 @@ Secao completa de auditoria para o jogador: etapa 16 (README final).
 
 ## Requisitos Obrigatorios
 
-- [ ] Game Service separado (REST concluido; gameplay/runtime no step 08)
+- [x] Game Service separado (REST + runtime gameplay broker)
 - [x] Wallet Service separado (dominio + persistencia + REST; JWT no step 10)
 - [x] Comunicacao assincrona via RabbitMQ (contratos + pub/sub step 04; gameplay na 08)
-- [ ] Gameplay completo (apostar, multiplicador, cashout, crash, liquidacao)
+- [x] Gameplay completo (apostar, multiplicador, cashout, crash, liquidacao via broker)
 - [ ] WebSocket server-to-client
 - [ ] Dinheiro sem ponto flutuante, saldo nunca negativo
 - [ ] Keycloak/OIDC
@@ -224,6 +244,6 @@ Game:
 - Bonus apenas apos obrigatorios validados
 - Comunicaçao entre servicos via RabbitMQ (event-driven, exchange `crash.events`)
 - Idempotencia de eventos por `eventId`; cents como string no JSON; sem outbox (step 04)
-- Provably Fair (step 06): `SeedChain` pre-gerada; persistencia fairness em `rounds` (step 07); `verifyRound` reutiliza `computeCrashPoint`; runtime chain no step 08
+- Provably Fair (step 06): `SeedChain` pre-gerada; persistencia fairness em `rounds` (step 07); `verifyRound` reutiliza `computeCrashPoint`; runtime chain no step 08 (`RoundEngineService`)
 
 Diagrama completo do fluxo: secao **Etapa 06** acima.
