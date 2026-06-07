@@ -27,7 +27,9 @@
       "redirectUris": ["http://localhost:3000/*"],
       "webOrigins": ["http://localhost:3000"],
       "standardFlowEnabled": true,
-      "pkceMethod": "S256"
+      "attributes": {
+        "pkceMethod": "S256"
+      }
     }
   ]
 }

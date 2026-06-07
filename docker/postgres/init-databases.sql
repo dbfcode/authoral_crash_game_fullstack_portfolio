@@ -1,0 +1,2 @@
+CREATE DATABASE games;
+CREATE DATABASE wallets;
