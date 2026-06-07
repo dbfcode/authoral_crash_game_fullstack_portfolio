@@ -15,6 +15,7 @@
     "test:report": "bun scripts/test-run.ts all",
     "test:unit:report": "bun scripts/test-run.ts unit",
     "test:e2e:report": "bun scripts/test-run.ts e2e",
+    "test:required:report": "bun scripts/test-run-required.ts",
     "lint": "bun run --workspaces lint"
   }
 }
