@@ -5,6 +5,7 @@ import { RoundLockService } from '../../src/application/round-lock.service';
 import { RoundBootstrapService } from '../../src/application/round-bootstrap.service';
 import { InMemoryChainStateRepository } from '../../src/infrastructure/persistence/in-memory-chain-state.repository';
 import { InMemoryRoundRepository } from '../../src/infrastructure/persistence/in-memory-round.repository';
+import { NoopGameRealtimePublisher } from '../../src/infrastructure/websocket/noop-game-realtime.publisher';
 import {
   computeCrashPoint,
   PROVABLY_FAIR_ALGORITHM_VERSION,
@@ -12,7 +13,6 @@ import {
 import { RoundStatus } from '../../src/domain/round-status';
 import type { GameEventPublisher } from '../../src/application/ports/game-event.publisher';
 import { BetLostSettledPayload } from '@crash/shared';
-import { RoundStatus } from '../../src/domain/round-status';
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -61,12 +61,18 @@ describe('RoundEngineService', () => {
       },
     };
 
-    const bootstrap = new RoundBootstrapService(roundRepository, gameState);
+    const realtime = new NoopGameRealtimePublisher();
+    const bootstrap = new RoundBootstrapService(
+      roundRepository,
+      gameState,
+      realtime,
+    );
     await bootstrap.onModuleInit();
 
     engine = new RoundEngineService(
       roundRepository,
       publisher,
+      realtime,
       gameState,
       new RoundLockService(),
     );

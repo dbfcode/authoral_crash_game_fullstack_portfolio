@@ -6,6 +6,7 @@ import { Round } from '../../src/domain/round';
 import { GameEventHandlerService } from '../../src/application/handlers/game-event-handler.service';
 import { InMemoryRoundRepository } from '../../src/infrastructure/persistence/in-memory-round.repository';
 import { RoundLockService } from '../../src/application/round-lock.service';
+import { NoopGameRealtimePublisher } from '../../src/infrastructure/websocket/noop-game-realtime.publisher';
 import { PROVABLY_FAIR_ALGORITHM_VERSION } from '../../src/domain/provably-fair';
 
 describe('GameEventHandlerService', () => {
@@ -14,7 +15,11 @@ describe('GameEventHandlerService', () => {
 
   beforeEach(async () => {
     repository = new InMemoryRoundRepository();
-    handlers = new GameEventHandlerService(repository, new RoundLockService());
+    handlers = new GameEventHandlerService(
+      repository,
+      new NoopGameRealtimePublisher(),
+      new RoundLockService(),
+    );
 
     const round = Round.create({ roundId: 'round-1' });
     round.placeBet({

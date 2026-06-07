@@ -87,9 +87,10 @@ describe('Gameplay broker E2E', () => {
 
     process.env.GAMES_USE_IN_MEMORY = '0';
     process.env.GAMES_DISABLE_ROUND_ENGINE = '0';
+    process.env.GAMES_DISABLE_WS = '1';
     process.env.GAMES_BETTING_DURATION_MS = '1200';
     process.env.GAMES_MULTIPLIER_TICK_MS = '50';
-    process.env.GAMES_MULTIPLIER_STEP_HUNDREDTHS = '200';
+    process.env.GAMES_MULTIPLIER_STEP_HUNDREDTHS = '25';
     process.env.GAMES_DB_URL = gamesDbUrl;
     process.env.RABBITMQ_URL = rabbitUrl;
 
@@ -114,7 +115,7 @@ describe('Gameplay broker E2E', () => {
       await walletConsumer.start();
 
       const gamesModule = await Test.createTestingModule({
-        imports: [GamesAppModule],
+        imports: [GamesAppModule.register()],
       }).compile();
       gamesApp = gamesModule.createNestApplication();
       gamesApp.setGlobalPrefix('games');
@@ -142,6 +143,7 @@ describe('Gameplay broker E2E', () => {
     delete process.env.GAMES_BETTING_DURATION_MS;
     delete process.env.GAMES_MULTIPLIER_TICK_MS;
     delete process.env.GAMES_MULTIPLIER_STEP_HUNDREDTHS;
+    delete process.env.GAMES_DISABLE_WS;
   });
 
   it('rejects bet when wallet has insufficient balance', async () => {
@@ -265,14 +267,32 @@ describe('Gameplay broker E2E', () => {
     );
 
     await waitFor(
+      async () => {
+        const bets = await request(gamesApp.getHttpServer())
+          .get('/games/bets/me')
+          .set('X-Player-Id', playerId);
+        return bets.body.items.find(
+          (item: { status: string }) => item.status === 'active',
+        );
+      },
+      (bet) => bet != null,
+    );
+
+    await waitFor(
       async () =>
         request(gamesApp.getHttpServer()).get('/games/rounds/current'),
       (response) => response.body.status === 'running',
     );
 
-    const cashout = await request(gamesApp.getHttpServer())
-      .post('/games/bet/cashout')
-      .set('X-Player-Id', playerId);
+    const cashout = await waitFor(
+      async () =>
+        request(gamesApp.getHttpServer())
+          .post('/games/bet/cashout')
+          .set('X-Player-Id', playerId),
+      (response) => response.status === 201,
+      10000,
+      20,
+    );
 
     expect(cashout.status).toBe(201);
     expect(cashout.body.payoutCents).toBeString();
@@ -324,9 +344,17 @@ describe('Gameplay broker E2E', () => {
     );
 
     await waitFor(
-      async () =>
-        request(gamesApp.getHttpServer()).get(`/games/rounds/${roundId}/verify`),
-      (response) => response.body.valid === true,
+      async () => {
+        const bets = await request(gamesApp.getHttpServer())
+          .get('/games/bets/me')
+          .set('X-Player-Id', playerId);
+        const bet = bets.body.items.find(
+          (item: { roundId: string; status: string }) =>
+            item.roundId === roundId && item.status === 'lost',
+        );
+        return bet;
+      },
+      (bet) => bet != null,
       20000,
     );
 

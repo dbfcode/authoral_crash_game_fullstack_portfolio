@@ -11,8 +11,9 @@ describe('REST games', () => {
   beforeAll(async () => {
     process.env.GAMES_USE_IN_MEMORY = '1';
     process.env.GAMES_DISABLE_ROUND_ENGINE = '1';
+    process.env.GAMES_DISABLE_WS = '1';
     const moduleRef = await Test.createTestingModule({
-      imports: [AppModule],
+      imports: [AppModule.register()],
     }).compile();
 
     app = moduleRef.createNestApplication();
@@ -25,6 +26,7 @@ describe('REST games', () => {
     await app.close();
     delete process.env.GAMES_USE_IN_MEMORY;
     delete process.env.GAMES_DISABLE_ROUND_ENGINE;
+    delete process.env.GAMES_DISABLE_WS;
   });
 
   it('GET /games/rounds/current returns committedRoundHash after bootstrap', async () => {
