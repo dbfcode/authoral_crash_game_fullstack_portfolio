@@ -8,7 +8,8 @@ services:
       POSTGRES_PASSWORD: crash
     volumes:
       - postgres-data:/var/lib/postgresql
-      - ./docker/postgres/init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql
+      - ./docker/postgres/init-databases.sql:/docker-entrypoint-initdb.d/01-init-databases.sql
+      - ./docker/postgres/init-wallets-schema.sql:/docker-entrypoint-initdb.d/02-init-wallets-schema.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U crash"]
       interval: 5s
