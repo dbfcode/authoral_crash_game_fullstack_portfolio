@@ -2,7 +2,7 @@
 
 Implementacao do desafio tecnico Full-stack Crash Game. Jogo crash multiplayer com dois servicos backend NestJS, comunicacao assincrona via RabbitMQ, tempo real com WebSocket, carteira, autenticacao via Keycloak, Docker e frontend React.
 
-> **Commit style:** Este repositorio segue o padrao global definido por Linus Torvalds para mensagens de commit — imperativo, linha de assunto curta (ate 50 caracteres), corpo explicando o que e por que (nao como), e atomico (um cambio logico por commit). Acreditamos que um historico Git limpo e expressivo e parte essencial da engenharia de software.
+> **Commit style:** Este repositorio segue o padrao global definido por Linus Torvalds (criador do git e do Linux) para mensagens de commit — imperativo, linha de assunto curta (ate 50 caracteres), corpo explicando o que e por que (nao como), e atomico (um cambio logico por commit). Acreditamos que um historico Git limpo e expressivo e parte essencial da engenharia de software.
 
 ## Stack
 
@@ -53,7 +53,8 @@ bun run test:e2e         # Testes E2E
 - [x] Dockerfiles para game-service e wallet-service
 - [x] Configuracao Kong (`docker/kong/kong.yml`)
 - [x] Realm Keycloak (`docker/keycloak/realm-export.json`)
-- [x] Init script PostgreSQL (`docker/postgres/init-databases.sh`)
+- [x] Init script PostgreSQL (`docker/postgres/init-databases.sql`)
+- [x] `bun run docker:up` funcional — todos os containers rodando
 - [x] `.env.example` para cada servico
 - [x] `.gitignore`
 - [x] `bun install` funcional
@@ -91,16 +92,27 @@ bun run test:e2e         # Testes E2E
 ## Endpoints Planejados
 
 Wallet:
+
 - `POST /wallets`
 - `GET /wallets/me`
 
 Game:
+
 - `GET /games/rounds/current`
 - `GET /games/rounds/history`
 - `GET /games/rounds/:roundId/verify`
 - `GET /games/bets/me`
 - `POST /games/bet`
 - `POST /games/bet/cashout`
+
+## Docker Build
+
+**Abordagem atual (A):** Cada serviço tem seu próprio `Dockerfile` e o contexto de build é seu diretório (`services/games/`, `services/wallets/`). O `package.json` é copiado primeiro, `bun install` roda, e depois o resto do código é copiado. O `bun.lock` (raiz do monorepo) não entra no contexto de build — as versões são resolvidas do registry. Simples e funcional para dev local.
+
+**Alternativa futura (B — monorepo-aware):** Mudar o contexto de build para a raiz do monorepo e ajustar os `Dockerfile` para navegar até o serviço específico. Isso permitiria usar o `bun.lock` global (builds reproduzíveis com `--frozen-lockfile`) e compartilhar o cache de camadas entre serviços. Postergado por enquanto porque:
+- A abordagem A já funciona e atende ao requisito eliminatório (`bun run docker:up`)
+- A abordagem B adicionaria complexidade de Docker multistage com contextos compartilhados sem benefício imediato
+- Será revisitada se o lockfile se provar necessário para consistência entre dev e produção
 
 ## Decisoes Tecnicas
 
