@@ -41,7 +41,25 @@ export function useRoundVerification(input: Input): RoundVerification {
   }, []);
 
   useEffect(() => {
-    if (input.status !== 'settled' || !input.revealedRoundSeed || !input.roundId) {
+    if (!input.roundId) {
+      setData(null);
+      setState('idle');
+      setError(null);
+      lastFetchedRef.current = null;
+      return;
+    }
+
+    if (input.status === 'betting' || input.status === 'running') {
+      if (roundId !== null && roundId !== input.roundId) {
+        setData(null);
+        setState('idle');
+        setError(null);
+        lastFetchedRef.current = null;
+      }
+      return;
+    }
+
+    if (input.status !== 'settled' || !input.revealedRoundSeed) {
       return;
     }
     if (lastFetchedRef.current === input.roundId) {
@@ -49,7 +67,7 @@ export function useRoundVerification(input: Input): RoundVerification {
     }
     pendingRoundRef.current = input.roundId;
     void runVerify(input.roundId);
-  }, [input.status, input.revealedRoundSeed, input.roundId, runVerify]);
+  }, [input.status, input.revealedRoundSeed, input.roundId, runVerify, roundId]);
 
   const retry = useCallback(() => {
     const target = pendingRoundRef.current ?? roundId ?? input.roundId;

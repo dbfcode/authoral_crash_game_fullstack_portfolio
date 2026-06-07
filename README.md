@@ -35,8 +35,8 @@ Bun 1.3, NestJS 11, TypeScript strict, PostgreSQL 18, RabbitMQ, Kong, Keycloak, 
 ```bash
 bun install              # Instala dependencias
 bun run docker:up        # Sobe infra + servicos
-bun run docker:down      # Para containers
-bun run docker:prune     # Remove tudo
+bun run docker:down      # Para containers (mantem volumes / estado do Postgres)
+bun run docker:prune     # Para containers, apaga volumes e imagens (reset total)
 bun run test:unit        # Testes unitarios
 bun run test:e2e         # Testes E2E
 bun run test:required:report  # Relatorio eliminatorio (unit + E2E + manifest) em test-runs/required-tests/
@@ -185,10 +185,24 @@ Secao completa de auditoria para o jogador: etapa 16 (README final).
 
 Variaveis de ambiente do runtime:
 
-- `GAMES_BETTING_DURATION_MS` (default `5000`)
+- `GAMES_BETTING_DURATION_MS` (default **`7000`** — 7s; alinhado ao contador do frontend)
 - `GAMES_MULTIPLIER_TICK_MS` (default `100`)
 - `GAMES_MULTIPLIER_STEP_HUNDREDTHS` (default `5`)
+- `GAMES_MAX_CRASH_MULTIPLIER` (default **`1000.00`** — teto do crash point; evita rodadas infinitas)
 - `GAMES_DISABLE_ROUND_ENGINE` (default `0`)
+
+**Janela de apostas (contador):** o default do projeto e **7 segundos**. Backend e frontend devem usar o mesmo valor:
+
+| Ambiente | Variavel |
+| -------- | -------- |
+| Docker (`game-service`) | `GAMES_BETTING_DURATION_MS=7000` em `docker-compose.yml` |
+| Game local | `GAMES_BETTING_DURATION_MS` em `services/games/.env` |
+| Frontend Docker | `VITE_BETTING_DURATION_MS=7000` no build (`frontend/Dockerfile` / compose) |
+| Frontend dev | `VITE_BETTING_DURATION_MS=7000` em `frontend/.env` |
+
+Apos alterar `.env` ou variaveis no compose, derrube e suba de novo com `bun run docker:up`.
+
+**Reset de estado (rodada presa / multiplicador antigo):** `docker compose down` nao apaga o Postgres. Use `bun run docker:prune` ou `docker compose down -v` antes de `docker:up` para comecar do zero.
 
 ### Etapa 09 - WebSocket Realtime
 
@@ -321,10 +335,12 @@ O script pausa `game-service` e `wallet-service` durante E2E (filas RabbitMQ com
 **Dev local:**
 
 ```bash
-cp frontend/.env.example frontend/.env
+cp frontend/.env.example frontend/.env   # VITE_BETTING_DURATION_MS=7000 (contador)
 bun run docker:up
 bun run dev:frontend   # http://localhost:3000
 ```
+
+O contador na UI usa `VITE_BETTING_DURATION_MS`; o game-service usa `GAMES_BETTING_DURATION_MS`. Mantenha os dois iguais. Alterou? Derrube e suba com `bun run docker:up`.
 
 **Usuário teste:** `player` / `player123` — login Keycloak → carteira criada automaticamente com saldo.
 

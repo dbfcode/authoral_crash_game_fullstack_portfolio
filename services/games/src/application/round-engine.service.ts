@@ -9,6 +9,7 @@ import { randomUUID } from 'crypto';
 import { BetLostSettledPayload } from '@crash/shared';
 import {
   computeCrashPoint,
+  maxCrashMultiplier,
   PROVABLY_FAIR_ALGORITHM_VERSION,
 } from '../domain/provably-fair';
 import { Multiplier } from '../domain/multiplier';
@@ -92,6 +93,8 @@ export class RoundEngineService implements OnModuleInit, OnModuleDestroy {
       await this.gameState.initialize();
     }
 
+    await this.recoverStaleRunningRound();
+
     this.running = true;
     void this.runLoop();
   }
@@ -106,6 +109,68 @@ export class RoundEngineService implements OnModuleInit, OnModuleDestroy {
       return null;
     }
     return Multiplier.fromDecimalString(record.fairness.crashPoint);
+  }
+
+  /** Ends legacy uncapped rounds or rounds that passed crash while the service was down. */
+  private async recoverStaleRunningRound(): Promise<void> {
+    const current = await this.roundRepository.findCurrent();
+    if (!current || current.round.status !== RoundStatus.RUNNING) {
+      return;
+    }
+
+    let record = current;
+    let crashPoint = this.getPrecomputedCrashPoint(record);
+    if (!crashPoint) {
+      await this.recoverCrashPoint(record);
+      const refreshed = await this.roundRepository.findById(record.round.id);
+      if (!refreshed) {
+        return;
+      }
+      record = refreshed;
+      crashPoint = this.getPrecomputedCrashPoint(record);
+    }
+    if (!crashPoint) {
+      return;
+    }
+
+    const maxCrash = maxCrashMultiplier();
+    const currentMultiplier =
+      record.fairness.currentMultiplierHundredths != null
+        ? Multiplier.ofHundredths(record.fairness.currentMultiplierHundredths)
+        : Multiplier.ofHundredths(100n);
+
+    const passedCrash = hasReachedCrashPoint(currentMultiplier, crashPoint);
+    const legacyUncapped = crashPoint.hundredths > maxCrash.hundredths;
+    if (!passedCrash && !legacyUncapped) {
+      return;
+    }
+
+    const crashAt = passedCrash
+      ? crashPoint
+      : currentMultiplier.hundredths >= maxCrash.hundredths
+        ? maxCrash
+        : currentMultiplier;
+
+    this.logger.warn(
+      `Recovering stale running round ${record.round.id} at ${crashAt.toDecimalString()}x` +
+        (legacyUncapped ? ` (legacy crash ${crashPoint.toDecimalString()}x capped)` : ''),
+    );
+
+    await this.roundLock.runExclusive(async () => {
+      const fresh = await this.roundRepository.findById(record.round.id);
+      if (!fresh || fresh.round.status !== RoundStatus.RUNNING) {
+        return;
+      }
+
+      if (legacyUncapped) {
+        fresh.fairness.crashPoint = crashAt.toDecimalString();
+      }
+
+      fresh.round.crash({ crashMultiplier: crashAt });
+      await this.roundRepository.save(fresh);
+      this.realtime.broadcastCrashed(toRoundCrashedPayload(fresh));
+      await this.revealAndPrepareNextRound(fresh);
+    });
   }
 
   private async runLoop(): Promise<void> {

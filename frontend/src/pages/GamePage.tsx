@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useAuth } from '../auth/AuthProvider';
 import { ApiError } from '../api/client';
 import { cashOut, placeBet } from '../api/games';
+import { env } from '../config/env';
 import { useGameSocket } from '../hooks/useGameSocket';
 import { useRoundVerification } from '../hooks/useRoundVerification';
 import { useToast } from '../hooks/useToast';
@@ -69,8 +70,16 @@ export function GamePage() {
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-4 p-4 pb-8">
       <PlayerBar />
-      <div className="flex items-center justify-between gap-2">
-        <BettingCountdown bettingStartedAt={game.bettingStartedAt} status={game.status} />
+      <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+        <div>
+          <BettingCountdown bettingStartedAt={game.bettingStartedAt} status={game.status} />
+          <p className="text-[11px] text-gray-500">
+            Padrão {Math.round(env.bettingDurationMs / 1000)}s — definido nas .env (
+            <code className="text-gray-400">VITE_BETTING_DURATION_MS</code> /{' '}
+            <code className="text-gray-400">GAMES_BETTING_DURATION_MS</code>). Alterou? Derrube
+            e suba de novo com <code className="text-gray-400">bun run docker:up</code>.
+          </p>
+        </div>
         <span
           className={`text-xs ${game.connected ? 'text-casino-accent' : 'text-casino-danger'}`}
         >

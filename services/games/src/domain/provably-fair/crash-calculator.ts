@@ -1,5 +1,6 @@
 import { createHmac } from 'crypto';
 import { Multiplier } from '../multiplier';
+import { capCrashHundredths } from './max-crash-multiplier';
 
 export type ComputeCrashPointInput = {
   roundSeed: string;
@@ -28,6 +29,8 @@ export function computeCrashPoint(input: ComputeCrashPointInput): Multiplier {
     return Multiplier.ofHundredths(100);
   }
 
-  const hundredths = BigInt(Math.floor((100 * e - h) / (e - h)));
+  const hundredths = capCrashHundredths(
+    BigInt(Math.floor((100 * e - h) / (e - h))),
+  );
   return Multiplier.ofHundredths(hundredths);
 }

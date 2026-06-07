@@ -126,6 +126,8 @@ export function useGameSocket(enabled: boolean) {
     const onCrashed = (payload: RoundCrashedPayload) => {
       setState((prev) => ({
         ...prev,
+        status: 'crashed',
+        currentMultiplier: payload.crashPoint,
         crashPoint: payload.crashPoint,
         crashedFlash: true,
       }));
@@ -138,6 +140,7 @@ export function useGameSocket(enabled: boolean) {
       setState((prev) => ({
         ...prev,
         status: 'settled',
+        currentMultiplier: payload.crashPoint,
         revealedRoundSeed: payload.revealedRoundSeed,
         crashPoint: payload.crashPoint,
         nextRoundHash: payload.nextRoundHash,

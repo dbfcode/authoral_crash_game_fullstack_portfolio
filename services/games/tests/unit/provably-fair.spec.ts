@@ -55,6 +55,18 @@ describe('computeCrashPoint', () => {
       expect(crash.hundredths).toBeGreaterThanOrEqual(100n);
     }
   });
+
+  it('caps crash at GAMES_MAX_CRASH_MULTIPLIER', () => {
+    process.env.GAMES_MAX_CRASH_MULTIPLIER = '100.00';
+    try {
+      for (let nonce = 0; nonce < 500; nonce += 1) {
+        const crash = computeCrashPoint({ roundSeed: FIXED_ROUND_SEED, nonce });
+        expect(crash.hundredths).toBeLessThanOrEqual(10_000n);
+      }
+    } finally {
+      delete process.env.GAMES_MAX_CRASH_MULTIPLIER;
+    }
+  });
 });
 
 describe('hashRoundSeed', () => {
