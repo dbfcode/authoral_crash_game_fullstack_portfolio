@@ -4,5 +4,5 @@ export const env = {
   keycloakUrl: import.meta.env.VITE_KEYCLOAK_URL ?? 'http://localhost:8080',
   keycloakRealm: import.meta.env.VITE_KEYCLOAK_REALM ?? 'crash-game',
   keycloakClientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID ?? 'crash-game-client',
-  bettingDurationMs: Number(import.meta.env.VITE_BETTING_DURATION_MS ?? '5000'),
+  bettingDurationMs: Number(import.meta.env.VITE_BETTING_DURATION_MS ?? '7000'),
 };
