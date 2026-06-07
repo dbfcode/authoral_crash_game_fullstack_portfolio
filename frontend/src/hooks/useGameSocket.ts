@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { WsEventTypes } from '@crash/shared';
+import { WsEventTypes } from '@crash/shared/websocket/ws-event-types';
 import type {
   RoundCrashedPayload,
   RoundHistoryItemPayload,
@@ -9,7 +9,7 @@ import type {
   RoundSnapshotPayload,
   RoundStartedPayload,
   RoundTickPayload,
-} from '@crash/shared';
+} from '@crash/shared/websocket/payloads/round-events';
 import type { BetItem, RoundHistoryItem } from '../api/games';
 import { env } from '../config/env';
 
