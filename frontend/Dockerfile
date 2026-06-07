@@ -1,12 +1,14 @@
 FROM oven/bun:latest AS build
 WORKDIR /app
 
-COPY package.json bun.lock ./
 COPY packages/shared packages/shared
-COPY frontend frontend
-
+WORKDIR /app/packages/shared
 RUN bun install
+
 WORKDIR /app/frontend
+COPY frontend/package.json ./
+RUN bun install
+COPY frontend .
 
 ARG VITE_API_BASE=http://localhost:8000
 ARG VITE_WS_URL=http://localhost:4001
