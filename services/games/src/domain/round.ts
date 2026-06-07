@@ -20,6 +20,21 @@ export class Round {
     return new Round(params.roundId, RoundStatus.BETTING, new Map());
   }
 
+  static rehydrate(params: {
+    roundId: string;
+    status: RoundStatus;
+    bets: Bet[];
+    crashMultiplier: Multiplier | null;
+  }): Round {
+    const bets = new Map(params.bets.map((bet) => [bet.playerId, bet]));
+    return new Round(
+      params.roundId,
+      params.status,
+      bets,
+      params.crashMultiplier,
+    );
+  }
+
   get status(): RoundStatus {
     return this._status;
   }

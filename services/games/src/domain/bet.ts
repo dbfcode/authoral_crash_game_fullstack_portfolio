@@ -30,6 +30,26 @@ export class Bet {
     );
   }
 
+  static rehydrate(params: {
+    id: string;
+    playerId: string;
+    roundId: string;
+    amountCents: bigint;
+    status: BetStatus;
+    cashoutMultiplier: Multiplier | null;
+    payoutCents: bigint | null;
+  }): Bet {
+    return new Bet(
+      params.id,
+      params.playerId,
+      params.roundId,
+      params.amountCents,
+      params.status,
+      params.cashoutMultiplier,
+      params.payoutCents,
+    );
+  }
+
   get status(): BetStatus {
     return this._status;
   }

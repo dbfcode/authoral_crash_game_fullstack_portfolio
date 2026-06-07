@@ -46,3 +46,15 @@ export class BetAlreadyCashedOutError extends DomainError {
     super('Bet has already been cashed out');
   }
 }
+
+export class RoundNotFoundError extends DomainError {
+  constructor(roundId: string) {
+    super(`Round not found: ${roundId}`);
+  }
+}
+
+export class NoActiveRoundError extends DomainError {
+  constructor() {
+    super('No active round available');
+  }
+}
