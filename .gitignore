@@ -6,3 +6,7 @@ test-runs/
 
 # Local agent roadmap and self-reference notes (not in repo history)
 self-refs/
+
+# Local agent IDE/config (keep on disk, not in repo)
+.cursor/
+.opencode/
