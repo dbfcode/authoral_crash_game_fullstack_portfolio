@@ -197,6 +197,9 @@ function VerificationDetail({
                 <div>
                   <p className="font-medium text-gray-300">{check.label}</p>
                   <p className="text-gray-500">{check.explanation}</p>
+                  {check.selfCheckHint ? (
+                    <p className="mt-1 text-[10px] leading-snug text-gray-500">{check.selfCheckHint}</p>
+                  ) : null}
                 </div>
               </li>
             ))}

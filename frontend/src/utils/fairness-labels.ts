@@ -6,6 +6,7 @@ export type FairnessCheckItem = {
   key: FairnessCheckKey;
   label: string;
   explanation: string;
+  selfCheckHint?: string;
   passed: boolean | null;
 };
 
@@ -57,6 +58,8 @@ export function buildFairnessChecks(data: VerifyRoundResponse): FairnessCheckIte
       label: 'Compromisso',
       explanation:
         'SHA-256(seed) deve ser igual ao hash publicado antes das apostas — prova que o resultado já estava fixado.',
+      selfCheckHint:
+        'Confira você: após o crash, calcule SHA-256 da seed (hex, em detalhes técnicos) e compare com o hash que apareceu em "Rodada ao vivo" — devem ser idênticos.',
       passed: hasSeed ? commitmentPassed(data) : null,
     },
     {

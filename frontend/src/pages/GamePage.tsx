@@ -63,7 +63,7 @@ export function GamePage() {
   };
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-4 p-4 pb-8">
+    <div className="mx-auto flex max-w-7xl flex-col gap-4 p-4 pb-8">
       <PlayerBar />
       <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
         <div>
@@ -81,7 +81,7 @@ export function GamePage() {
         </span>
       </div>
       <div className="grid gap-4 lg:grid-cols-3">
-        <div className="space-y-4 lg:col-span-2">
+        <div className="space-y-4">
           <MultiplierChart
             multiplier={game.currentMultiplier}
             crashedFlash={game.crashedFlash}
@@ -101,6 +101,9 @@ export function GamePage() {
           <LiveBets bets={game.bets} playerId={playerId} username={username} />
         </div>
         <div className="space-y-4">
+          <RoundHistory items={game.history} />
+        </div>
+        <div className="space-y-4">
           <FairnessPanel
             status={game.status}
             roundId={game.roundId}
@@ -108,7 +111,6 @@ export function GamePage() {
             nextRoundHash={game.nextRoundHash}
             fairness={fairness}
           />
-          <RoundHistory items={game.history} />
         </div>
       </div>
     </div>
