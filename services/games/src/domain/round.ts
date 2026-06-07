@@ -1,4 +1,5 @@
 import { Bet } from './bet';
+import { BetStatus } from './bet-status';
 import { assertBetWithinLimits } from './bet-limits';
 import {
   BetNotFoundError,
@@ -58,7 +59,8 @@ export class Round {
   }): Bet {
     this.assertStatus(RoundStatus.BETTING, 'place bet');
 
-    if (this._bets.has(params.playerId)) {
+    const existing = this._bets.get(params.playerId);
+    if (existing && existing.status !== BetStatus.REJECTED) {
       throw new DuplicateBetError(params.playerId);
     }
 
@@ -73,6 +75,32 @@ export class Round {
 
     this._bets.set(params.playerId, bet);
     return bet;
+  }
+
+  removeBet(playerId: string): void {
+    this._bets.delete(playerId);
+  }
+
+  updateBet(bet: Bet): void {
+    this._bets.set(bet.playerId, bet);
+  }
+
+  confirmBet(playerId: string): Bet {
+    const bet = this._bets.get(playerId);
+    if (!bet) {
+      throw new BetNotFoundError(playerId);
+    }
+    const confirmed = bet.confirm();
+    this._bets.set(playerId, confirmed);
+    return confirmed;
+  }
+
+  removePendingBets(): void {
+    for (const [playerId, bet] of this._bets) {
+      if (bet.status === BetStatus.PENDING) {
+        this._bets.delete(playerId);
+      }
+    }
   }
 
   startRunning(): void {

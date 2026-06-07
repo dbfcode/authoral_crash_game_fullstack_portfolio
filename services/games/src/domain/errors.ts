@@ -47,6 +47,12 @@ export class BetAlreadyCashedOutError extends DomainError {
   }
 }
 
+export class InvalidBetStateError extends DomainError {
+  constructor(action: string, status: string) {
+    super(`Cannot ${action} bet in status ${status}`);
+  }
+}
+
 export class RoundNotFoundError extends DomainError {
   constructor(roundId: string) {
     super(`Round not found: ${roundId}`);

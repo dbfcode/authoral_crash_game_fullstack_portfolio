@@ -4,7 +4,7 @@ import { GameCommandService } from './application/game-command.service';
 import { GameMessagingBootstrap } from './application/game-messaging.bootstrap';
 import { GameQueryService } from './application/game-query.service';
 import { GameStateService } from './application/game-state.service';
-import { GameEventHandlers } from './application/handlers/game-event.handlers';
+import { GameEventHandlerService } from './application/handlers/game-event-handler.service';
 import { RoundBootstrapService } from './application/round-bootstrap.service';
 import { RoundEngineService } from './application/round-engine.service';
 import { RoundLockService } from './application/round-lock.service';
@@ -22,14 +22,17 @@ import {
 } from './infrastructure/messaging/messaging.constants';
 import { InMemoryBetRepository } from './infrastructure/persistence/in-memory-bet.repository';
 import { InMemoryChainStateRepository } from './infrastructure/persistence/in-memory-chain-state.repository';
+import { InMemoryProcessedEventRepository } from './infrastructure/persistence/in-memory-processed-event.repository';
 import { InMemoryRoundRepository } from './infrastructure/persistence/in-memory-round.repository';
 import { PostgresBetRepository } from './infrastructure/persistence/postgres-bet.repository';
 import { PostgresChainStateRepository } from './infrastructure/persistence/postgres-chain-state.repository';
+import { PostgresProcessedEventRepository } from './infrastructure/persistence/postgres-processed-event.repository';
 import { PostgresRoundRepository } from './infrastructure/persistence/postgres-round.repository';
 import {
   BET_REPOSITORY,
   CHAIN_STATE_REPOSITORY,
   PG_POOL,
+  PROCESSED_EVENT_REPOSITORY,
   ROUND_REPOSITORY,
 } from './infrastructure/persistence/persistence.constants';
 import { runGameMigrations } from './infrastructure/persistence/run-migrations';
@@ -41,6 +44,10 @@ const persistenceProviders = useInMemoryPersistence
       {
         provide: CHAIN_STATE_REPOSITORY,
         useClass: InMemoryChainStateRepository,
+      },
+      {
+        provide: PROCESSED_EVENT_REPOSITORY,
+        useClass: InMemoryProcessedEventRepository,
       },
       {
         provide: ROUND_REPOSITORY,
@@ -75,6 +82,11 @@ const persistenceProviders = useInMemoryPersistence
         inject: [PG_POOL],
       },
       {
+        provide: PROCESSED_EVENT_REPOSITORY,
+        useFactory: (pool: Pool) => new PostgresProcessedEventRepository(pool),
+        inject: [PG_POOL],
+      },
+      {
         provide: ROUND_REPOSITORY,
         useFactory: (pool: Pool) => new PostgresRoundRepository(pool),
         inject: [PG_POOL],
@@ -99,7 +111,7 @@ const persistenceProviders = useInMemoryPersistence
         },
         inject: [RABBITMQ_CONNECTION],
       },
-      GameEventHandlers,
+      GameEventHandlerService,
       GameMessagingBootstrap,
     ];
 
