@@ -1,7 +1,7 @@
 import { Multiplier } from '../multiplier';
 
-/** Default 1000.00x — keeps rounds playable; uncapped PF can reach 10k+. */
-const DEFAULT_MAX = '1000.00';
+/** Default 100.00x — keeps rounds playable; uncapped PF can reach 10k+. */
+const DEFAULT_MAX = '100.00';
 
 export function maxCrashMultiplier(): Multiplier {
   const raw = process.env.GAMES_MAX_CRASH_MULTIPLIER ?? DEFAULT_MAX;

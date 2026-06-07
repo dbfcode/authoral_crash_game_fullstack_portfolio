@@ -94,7 +94,7 @@ services:
       KEYCLOAK_ISSUER: http://localhost:8080/realms/crash-game
       AUTH_DEV_BYPASS: "0"
       GAMES_BETTING_DURATION_MS: "7000"
-      GAMES_MAX_CRASH_MULTIPLIER: "1000.00"
+      GAMES_MAX_CRASH_MULTIPLIER: "100.00"
     restart: unless-stopped
 
   wallet-service:

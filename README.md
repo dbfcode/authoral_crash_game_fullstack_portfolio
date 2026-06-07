@@ -185,13 +185,15 @@ Secao completa de auditoria para o jogador: etapa 16 (README final).
 
 Variaveis de ambiente do runtime:
 
+- `GAMES_MAX_CRASH_MULTIPLIER` (default **`100.00`** — teto do crash point; evita rodadas infinitas)
 - `GAMES_BETTING_DURATION_MS` (default **`7000`** — 7s; alinhado ao contador do frontend)
 - `GAMES_MULTIPLIER_TICK_MS` (default `100`)
 - `GAMES_MULTIPLIER_STEP_HUNDREDTHS` (default `5`)
-- `GAMES_MAX_CRASH_MULTIPLIER` (default **`1000.00`** — teto do crash point; evita rodadas infinitas)
 - `GAMES_DISABLE_ROUND_ENGINE` (default `0`)
 
-**Janela de apostas (contador):** o default do projeto e **7 segundos**. Backend e frontend devem usar o mesmo valor:
+**Teto do crash:** o provably fair pode sortear multiplicadores muito altos; o projeto limita o crash em `GAMES_MAX_CRASH_MULTIPLIER` (default **100x**) em `docker-compose.yml` / `services/games/.env`. Alterou? Derrube e suba com `bun run docker:up`.
+
+**Janela de apostas (contador):** default **7 segundos** — alinhe backend e frontend:
 
 | Ambiente | Variavel |
 | -------- | -------- |
@@ -340,7 +342,7 @@ bun run docker:up
 bun run dev:frontend   # http://localhost:3000
 ```
 
-O contador na UI usa `VITE_BETTING_DURATION_MS`; o game-service usa `GAMES_BETTING_DURATION_MS`. Mantenha os dois iguais. Alterou? Derrube e suba com `bun run docker:up`.
+O contador usa `VITE_BETTING_DURATION_MS` (frontend) e `GAMES_BETTING_DURATION_MS` (game-service). Mantenha os dois iguais.
 
 **Usuário teste:** `player` / `player123` — login Keycloak → carteira criada automaticamente com saldo.
 
