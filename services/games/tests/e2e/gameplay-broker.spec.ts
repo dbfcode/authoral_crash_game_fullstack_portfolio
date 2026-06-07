@@ -93,6 +93,7 @@ describe('Gameplay broker E2E', () => {
     process.env.GAMES_MULTIPLIER_STEP_HUNDREDTHS = '25';
     process.env.GAMES_DB_URL = gamesDbUrl;
     process.env.RABBITMQ_URL = rabbitUrl;
+    process.env.AUTH_DEV_BYPASS = '1';
 
     try {
       walletPool = new Pool({ connectionString: walletsDbUrl });
@@ -144,6 +145,7 @@ describe('Gameplay broker E2E', () => {
     delete process.env.GAMES_MULTIPLIER_TICK_MS;
     delete process.env.GAMES_MULTIPLIER_STEP_HUNDREDTHS;
     delete process.env.GAMES_DISABLE_WS;
+    delete process.env.AUTH_DEV_BYPASS;
   });
 
   it('rejects bet when wallet has insufficient balance', async () => {

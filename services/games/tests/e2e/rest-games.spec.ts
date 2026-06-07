@@ -12,6 +12,7 @@ describe('REST games', () => {
     process.env.GAMES_USE_IN_MEMORY = '1';
     process.env.GAMES_DISABLE_ROUND_ENGINE = '1';
     process.env.GAMES_DISABLE_WS = '1';
+    process.env.AUTH_DEV_BYPASS = '1';
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule.register()],
     }).compile();
@@ -27,6 +28,7 @@ describe('REST games', () => {
     delete process.env.GAMES_USE_IN_MEMORY;
     delete process.env.GAMES_DISABLE_ROUND_ENGINE;
     delete process.env.GAMES_DISABLE_WS;
+    delete process.env.AUTH_DEV_BYPASS;
   });
 
   it('GET /games/rounds/current returns committedRoundHash after bootstrap', async () => {

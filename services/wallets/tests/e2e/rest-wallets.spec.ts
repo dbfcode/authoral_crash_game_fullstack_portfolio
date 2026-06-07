@@ -12,6 +12,7 @@ describe('REST wallets', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
+    process.env.AUTH_DEV_BYPASS = '1';
     const moduleRef = await Test.createTestingModule({
       controllers: [WalletController],
       providers: [
@@ -36,6 +37,7 @@ describe('REST wallets', () => {
 
   afterAll(async () => {
     await app.close();
+    delete process.env.AUTH_DEV_BYPASS;
   });
 
   it('POST /wallets creates wallet for player', async () => {
