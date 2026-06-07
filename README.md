@@ -35,6 +35,11 @@ Bun 1.3, NestJS 11, TypeScript strict, PostgreSQL 18, RabbitMQ, Kong, Keycloak, 
 ```bash
 bun install              # Instala dependencias
 bun run docker:up        # Sobe infra + servicos
+```
+
+**Cold start:** apos `docker:up`, aguarde ~1–2 min na primeira subida (build + Keycloak). O frontend exibe *Iniciando aplicacao…* ate games, wallets e Keycloak responderem — evite abrir antes do comando terminar o build.
+
+```bash
 bun run docker:down      # Para containers (mantem volumes / estado do Postgres)
 bun run docker:prune     # Para containers, apaga volumes e imagens (reset total)
 bun run test:unit        # Testes unitarios

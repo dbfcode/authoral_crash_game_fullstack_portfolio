@@ -5,8 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Crash Game</title>
   </head>
-  <body>
-    <div id="root"></div>
+  <body style="margin:0;background:#0a0a0f;color:#9ca3af;font-family:system-ui,sans-serif">
+    <div id="root">
+      <div style="display:flex;min-height:100vh;flex-direction:column;align-items:center;justify-content:center;gap:1rem;padding:1.5rem;text-align:center">
+        <div style="width:2.5rem;height:2.5rem;border:4px solid rgba(0,255,163,0.25);border-top-color:#00ffa3;border-radius:9999px;animation:spin 1s linear infinite"></div>
+        <p style="margin:0;font-size:1.25rem;font-weight:700;color:#fff">Iniciando aplicação…</p>
+        <p style="margin:0;max-width:28rem;font-size:0.875rem">Aguarde enquanto a stack Docker fica pronta.</p>
+      </div>
+    </div>
+    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -86,14 +86,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [getToken]);
 
   useEffect(() => {
-    void keycloak
-      .init({ onLoad: 'check-sso', pkceMethod: 'S256', checkLoginIframe: false })
-      .then((auth) => {
-        setAuthenticated(auth);
-        syncClaims();
-        setReady(true);
-      })
-      .catch(() => setReady(true));
+    let cancelled = false;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const initKeycloak = () => {
+      void keycloak
+        .init({ onLoad: 'check-sso', pkceMethod: 'S256', checkLoginIframe: false })
+        .then((auth) => {
+          if (cancelled) {
+            return;
+          }
+          setAuthenticated(auth);
+          syncClaims();
+          setReady(true);
+        })
+        .catch(() => {
+          if (cancelled) {
+            return;
+          }
+          retryTimer = setTimeout(initKeycloak, 2000);
+        });
+    };
+
+    initKeycloak();
+
+    return () => {
+      cancelled = true;
+      if (retryTimer) {
+        clearTimeout(retryTimer);
+      }
+    };
   }, [syncClaims]);
 
   useEffect(() => {
