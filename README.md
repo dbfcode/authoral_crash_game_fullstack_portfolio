@@ -40,6 +40,7 @@ bun run docker:prune     # Remove tudo
 bun run test:unit        # Testes unitarios
 bun run test:e2e         # Testes E2E
 bun run test:required:report  # Relatorio eliminatorio (unit + E2E + manifest) em test-runs/required-tests/
+bun run dev:frontend       # Vite dev server :3000
 bun run test:unit:report # Testes unitarios com relatorio em test-runs/<timestamp>-unit/
 ```
 
@@ -306,11 +307,33 @@ O script pausa `game-service` e `wallet-service` durante E2E (filas RabbitMQ com
 - Smoke JWT — comandos Etapa 10 acima
 - `docker compose down -v && bun run docker:up` — sobe sem passos manuais
 
+### Etapa 13 - Frontend
+
+- [x] Vite + React + Tailwind dark mode (`frontend/`)
+- [x] Login OIDC Keycloak (authorization code + PKCE)
+- [x] REST via Kong (`:8000`); WebSocket direto game-service (`:4001/games`)
+- [x] Tela do jogo: multiplicador, apostas, cashout, histórico, Provably Fair
+- [x] Hash comprometido antes da rodada; seed só após `round:settled`
+- [x] Modal verificação `GET /games/rounds/:id/verify`
+- [x] Saldo inicial em `POST /wallets` (`WALLETS_INITIAL_BALANCE_CENTS`, default R$ 5.000)
+- [x] Frontend no `docker compose` — `http://localhost:3000`
+
+**Dev local:**
+
+```bash
+cp frontend/.env.example frontend/.env
+bun run docker:up
+bun run dev:frontend   # http://localhost:3000
+```
+
+**Usuário teste:** `player` / `player123` — login Keycloak → carteira criada automaticamente com saldo.
+
+**Testes frontend:** `cd frontend && bun test`
+
 ### Proximas etapas
 
-1. **Etapa 11 — Prisma ORM** — [guia de execução](docs/etapas/etapa-11-prisma-orm.md) (opcional pós-MVP; stack aceita ORM no challenge)
-2. **Etapa 13 — Frontend** — UI completa (hash visivel, link verify, grafico crash)
-3. **Etapa 14 — README final + entrega**
+1. **Etapa 11 — Prisma ORM** — [guia de execução](docs/etapas/etapa-11-prisma-orm.md) (opcional pós-MVP)
+2. **Etapa 14 — README final + entrega**
 
 ## Requisitos Obrigatorios
 
@@ -322,8 +345,8 @@ O script pausa `game-service` e `wallet-service` durante E2E (filas RabbitMQ com
 - [x] Dinheiro sem ponto flutuante, saldo nunca negativo (BigInt/`amountCents` string; unit money-cents + wallet)
 - [x] Keycloak/OIDC (realm importado; login UI no step 15)
 - [x] Backend valida JWT
-- [ ] Frontend funcional
-- [ ] Docker Compose executavel por `bun run docker:up`
+- [x] Frontend funcional
+- [x] Docker Compose executavel por `bun run docker:up`
 - [x] Testes unitarios de dominio (Wallet + Game + Provably Fair; REST/gameplay nas etapas 07–08)
 - [x] Testes E2E dos fluxos criticos (Etapa 12 — `test:required:report` com infra)
 - [ ] README com instrucoes, decisoes, trade-offs e checklist
