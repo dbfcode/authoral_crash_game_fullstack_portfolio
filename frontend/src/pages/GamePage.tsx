@@ -2,9 +2,8 @@ import { useMemo, useState } from 'react';
 import { useAuth } from '../auth/AuthProvider';
 import { ApiError } from '../api/client';
 import { cashOut, placeBet } from '../api/games';
-import { env } from '../config/env';
 import { useGameSocket } from '../hooks/useGameSocket';
-import { useRoundVerification } from '../hooks/useRoundVerification';
+import { useFairnessVerifications } from '../hooks/useFairnessVerifications';
 import { useToast } from '../hooks/useToast';
 import { PlayerBar } from '../components/PlayerBar';
 import { MultiplierChart } from '../components/MultiplierChart';
@@ -17,11 +16,7 @@ import { LiveBets } from '../components/LiveBets';
 export function GamePage() {
   const { playerId, username, getToken, refreshWallet } = useAuth();
   const { game } = useGameSocket(true);
-  const verification = useRoundVerification({
-    roundId: game.roundId,
-    status: game.status,
-    revealedRoundSeed: game.revealedRoundSeed,
-  });
+  const fairness = useFairnessVerifications(game.history, game.lastSettled?.roundId ?? null);
   const { showToast } = useToast();
   const [placing, setPlacing] = useState(false);
   const [cashingOut, setCashingOut] = useState(false);
@@ -74,10 +69,9 @@ export function GamePage() {
         <div>
           <BettingCountdown bettingStartedAt={game.bettingStartedAt} status={game.status} />
           <p className="text-[11px] text-gray-500">
-            Padrão {Math.round(env.bettingDurationMs / 1000)}s — definido nas .env (
-            <code className="text-gray-400">VITE_BETTING_DURATION_MS</code> /{' '}
-            <code className="text-gray-400">GAMES_BETTING_DURATION_MS</code>). Alterou? Derrube
-            e suba de novo com <code className="text-gray-400">bun run docker:up</code>.
+            Crash com teto de 100x por padrão (
+            <code className="text-gray-400">GAMES_MAX_CRASH_MULTIPLIER</code> nas .env). Alterou?
+            Derrube e suba de novo com <code className="text-gray-400">bun run docker:up</code>.
           </p>
         </div>
         <span
@@ -112,9 +106,7 @@ export function GamePage() {
             roundId={game.roundId}
             committedRoundHash={game.committedRoundHash}
             nextRoundHash={game.nextRoundHash}
-            revealedRoundSeed={game.revealedRoundSeed}
-            crashPoint={game.crashPoint}
-            verification={verification}
+            fairness={fairness}
           />
           <RoundHistory items={game.history} />
         </div>

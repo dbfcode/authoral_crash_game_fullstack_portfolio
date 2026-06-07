@@ -22,6 +22,11 @@ export type GameState = {
   currentMultiplier: string | null;
   crashPoint: string | null;
   revealedRoundSeed: string | null;
+  lastSettled: {
+    roundId: string;
+    revealedRoundSeed: string;
+    crashPoint: string;
+  } | null;
   bets: BetItem[];
   history: RoundHistoryItem[];
   crashedFlash: boolean;
@@ -37,6 +42,7 @@ const initialState: GameState = {
   currentMultiplier: null,
   crashPoint: null,
   revealedRoundSeed: null,
+  lastSettled: null,
   bets: [],
   history: [],
   crashedFlash: false,
@@ -144,6 +150,11 @@ export function useGameSocket(enabled: boolean) {
         revealedRoundSeed: payload.revealedRoundSeed,
         crashPoint: payload.crashPoint,
         nextRoundHash: payload.nextRoundHash,
+        lastSettled: {
+          roundId: payload.roundId,
+          revealedRoundSeed: payload.revealedRoundSeed,
+          crashPoint: payload.crashPoint,
+        },
       }));
     };
 

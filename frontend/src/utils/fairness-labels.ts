@@ -11,7 +11,7 @@ export type FairnessCheckItem = {
 
 const REASON_PT: Record<string, string> = {
   'roundSeed does not match roundHash':
-    'A seed revelada não corresponde ao hash comprometido.',
+    'A seed revelada não corresponde ao hash publicado antes das apostas.',
   'crashPoint does not match recomputed value':
     'O crash point não bate com o recálculo a partir da seed.',
   'nextRoundHash does not match next round commitment':
