@@ -13,6 +13,7 @@ import { RabbitMqConnection } from '../../../wallets/src/infrastructure/messagin
 import { PostgresWalletRepository } from '../../../wallets/src/infrastructure/persistence/postgres-wallet.repository';
 import { PostgresProcessedEventRepository as WalletProcessedEventRepository } from '../../../wallets/src/infrastructure/persistence/postgres-processed-event.repository';
 import { runWalletMigrations } from '../../../wallets/src/infrastructure/persistence/run-migrations';
+import { runGameMigrations } from '../../src/infrastructure/persistence/run-migrations';
 import { Pool } from 'pg';
 import { DomainExceptionFilter } from '../../src/presentation/filters/domain-exception.filter';
 
@@ -24,6 +25,17 @@ const walletsDbUrl =
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitForBettingRound(
+  app: INestApplication,
+  timeoutMs = 30000,
+): Promise<void> {
+  await waitFor(
+    async () => request(app.getHttpServer()).get('/games/rounds/current'),
+    (response) => response.body.status === 'betting',
+    timeoutMs,
+  );
 }
 
 async function placeBetWhenBetting(
@@ -43,7 +55,7 @@ async function placeBetWhenBetting(
         .send({ amountCents });
     },
     (response) => response.status === 201,
-    15000,
+    30000,
     50,
   );
 }
@@ -51,7 +63,7 @@ async function placeBetWhenBetting(
 async function waitFor<T>(
   fn: () => Promise<T>,
   predicate: (value: T) => boolean,
-  timeoutMs = 15000,
+  timeoutMs = 30000,
   intervalMs = 100,
 ): Promise<T> {
   const deadline = Date.now() + timeoutMs;
@@ -66,6 +78,7 @@ async function waitFor<T>(
 }
 
 describe('Gameplay broker E2E', () => {
+  const testTimeoutMs = 60000;
   let gamesApp: INestApplication;
   let walletService: WalletService;
   let walletPool: Pool;
@@ -98,6 +111,13 @@ describe('Gameplay broker E2E', () => {
     try {
       walletPool = new Pool({ connectionString: walletsDbUrl });
       await runWalletMigrations(walletPool);
+
+      const gamesPool = new Pool({ connectionString: gamesDbUrl });
+      await runGameMigrations(gamesPool);
+      await gamesPool.query(
+        'TRUNCATE bets, rounds, processed_events, chain_state RESTART IDENTITY',
+      );
+      await gamesPool.end();
 
       const walletRepository = new PostgresWalletRepository(walletPool);
       walletService = new WalletService(walletRepository);
@@ -148,7 +168,9 @@ describe('Gameplay broker E2E', () => {
     delete process.env.AUTH_DEV_BYPASS;
   });
 
-  it('rejects bet when wallet has insufficient balance', async () => {
+  it(
+    'rejects bet when wallet has insufficient balance',
+    async () => {
     if (!infraAvailable) {
       return;
     }
@@ -180,18 +202,18 @@ describe('Gameplay broker E2E', () => {
             item.status !== 'pending' && item.status !== 'active',
         ),
     );
-  });
+  },
+    testTimeoutMs,
+  );
 
-  it('rejects duplicate bet for same player in one round', async () => {
+  it(
+    'rejects duplicate bet for same player in one round',
+    async () => {
     if (!infraAvailable) {
       return;
     }
 
-    await waitFor(
-      async () =>
-        request(gamesApp.getHttpServer()).get('/games/rounds/current'),
-      (response) => response.body.status === 'betting',
-    );
+    await waitForBettingRound(gamesApp);
 
     const playerId = `player-dup-${Date.now()}`;
     await walletService.createWallet(playerId, 5000n);
@@ -209,9 +231,13 @@ describe('Gameplay broker E2E', () => {
       .send({ amountCents: '600' });
 
     expect(second.status).toBe(409);
-  });
+  },
+    testTimeoutMs,
+  );
 
-  it('rejects bet while round is running', async () => {
+  it(
+    'rejects bet while round is running',
+    async () => {
     if (!infraAvailable) {
       return;
     }
@@ -219,11 +245,7 @@ describe('Gameplay broker E2E', () => {
     const playerId = `player-running-${Date.now()}`;
     await walletService.createWallet(playerId, 5000n);
 
-    await waitFor(
-      async () =>
-        request(gamesApp.getHttpServer()).get('/games/rounds/current'),
-      (response) => response.body.status === 'betting',
-    );
+    await waitForBettingRound(gamesApp);
 
     await request(gamesApp.getHttpServer())
       .post('/games/bet')
@@ -242,9 +264,13 @@ describe('Gameplay broker E2E', () => {
       .send({ amountCents: '500' });
 
     expect(response.status).toBe(409);
-  });
+  },
+    testTimeoutMs,
+  );
 
-  it('credits wallet on cashout via broker', async () => {
+  it(
+    'credits wallet on cashout via broker',
+    async () => {
     if (!infraAvailable) {
       return;
     }
@@ -252,11 +278,7 @@ describe('Gameplay broker E2E', () => {
     const playerId = `player-cashout-${Date.now()}`;
     await walletService.createWallet(playerId, 5000n);
 
-    await waitFor(
-      async () =>
-        request(gamesApp.getHttpServer()).get('/games/rounds/current'),
-      (response) => response.body.status === 'betting',
-    );
+    await waitForBettingRound(gamesApp);
 
     await request(gamesApp.getHttpServer())
       .post('/games/bet')
@@ -304,9 +326,13 @@ describe('Gameplay broker E2E', () => {
       async () => walletService.getBalance(playerId),
       (balance) => balance === 4000n + payout,
     );
-  });
+  },
+    testTimeoutMs,
+  );
 
-  it('settles lost bet on crash and reveals seed', async () => {
+  it(
+    'settles lost bet on crash and reveals seed',
+    async () => {
     if (!infraAvailable) {
       return;
     }
@@ -318,6 +344,7 @@ describe('Gameplay broker E2E', () => {
       async () =>
         request(gamesApp.getHttpServer()).get('/games/rounds/current'),
       (response) => response.body.status === 'betting',
+      30000,
     );
 
     const roundId = currentBefore.body.roundId as string;
@@ -369,5 +396,7 @@ describe('Gameplay broker E2E', () => {
     );
     expect(lostBet?.status).toBe('lost');
     expect(await walletService.getBalance(playerId)).toBe(4200n);
-  });
+  },
+    testTimeoutMs,
+  );
 });

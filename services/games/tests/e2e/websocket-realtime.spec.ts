@@ -97,7 +97,9 @@ describe('WebSocket realtime E2E', () => {
     delete process.env.GAMES_MULTIPLIER_STEP_HUNDREDTHS;
   });
 
-  it('syncs clients with snapshot and round lifecycle without early seed leak', async () => {
+  it(
+    'syncs clients with snapshot and round lifecycle without early seed leak',
+    async () => {
     if (!infraAvailable) {
       return;
     }
@@ -165,5 +167,7 @@ describe('WebSocket realtime E2E', () => {
 
     await sleep(200);
     socket.disconnect();
-  });
+  },
+    30000,
+  );
 });

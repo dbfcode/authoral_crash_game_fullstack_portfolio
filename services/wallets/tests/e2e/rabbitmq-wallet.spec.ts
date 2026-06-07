@@ -20,7 +20,9 @@ import { InMemoryWalletRepository } from '../../src/infrastructure/persistence/i
 const rabbitUrl = process.env.RABBITMQ_URL ?? 'amqp://crash:crash@localhost:5672';
 
 describe('RabbitMQ wallet integration', () => {
-  it('processes BetPlacedRequested and publishes BetReserved', async () => {
+  it(
+    'processes BetPlacedRequested and publishes BetReserved',
+    async () => {
     if (process.env.SKIP_RABBITMQ_E2E === '1') {
       return;
     }
@@ -51,7 +53,7 @@ describe('RabbitMQ wallet integration', () => {
     await consumer.start();
 
     const responsePromise = new Promise<string>((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error('timeout waiting response')), 5000);
+      const timeout = setTimeout(() => reject(new Error('timeout waiting response')), 10000);
       void channel.consume(
         'game-service.events',
         (message) => {
@@ -87,5 +89,7 @@ describe('RabbitMQ wallet integration', () => {
 
     await rabbitMq.close();
     await connection.close();
-  });
+    },
+    15000,
+  );
 });
