@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Crash Game — WS test</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 640px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+      #status {
+        font-weight: 600;
+      }
+      #status.ok {
+        color: #0a0;
+      }
+      #status.err {
+        color: #c00;
+      }
+      #log {
+        margin-top: 1rem;
+        padding: 0.75rem;
+        background: #111;
+        color: #0f0;
+        font-family: monospace;
+        font-size: 13px;
+        height: 280px;
+        overflow-y: auto;
+        border-radius: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>WebSocket test</h1>
+    <p id="status">conectando…</p>
+    <p>
+      Game: <code id="url"></code> — abra esta página em <strong>duas abas</strong> e compare os
+      ticks.
+    </p>
+    <div id="log"></div>
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <script>
+      const gameUrl = 'http://127.0.0.1:4001/games';
+      document.getElementById('url').textContent = gameUrl;
+
+      const statusEl = document.getElementById('status');
+      const logEl = document.getElementById('log');
+
+      function log(line) {
+        logEl.textContent = line + '\n' + logEl.textContent;
+      }
+
+      const socket = io(gameUrl, { transports: ['websocket', 'polling'] });
+
+      socket.on('connect', () => {
+        statusEl.textContent = 'connected — ' + socket.id;
+        statusEl.className = 'ok';
+        log('connected');
+      });
+
+      socket.on('connect_error', (err) => {
+        statusEl.textContent = 'erro: ' + err.message;
+        statusEl.className = 'err';
+        log('connect_error: ' + err.message);
+      });
+
+      socket.on('round:snapshot', (p) => {
+        log('snapshot hash=' + (p.committedRoundHash || '').slice(0, 16) + '…');
+      });
+
+      socket.on('round:tick', (p) => {
+        log('tick ' + p.currentMultiplier + ' round=' + p.roundId.slice(0, 8));
+      });
+    </script>
+  </body>
+</html>
