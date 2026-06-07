@@ -73,7 +73,7 @@ Relatorios locais de teste ficam em `test-runs/` (gitignored), com `summary.json
 - [x] InMemoryWalletRepository para testes unitarios
 - [x] PostgresWalletRepository + migration SQL
 - [x] Testes unitarios de dominio e application (26 testes)
-- [ ] REST `POST /wallets` e `GET /wallets/me` (etapa 07 + auth)
+- [x] REST `POST /wallets` e `GET /wallets/me` (auth dev via header `X-Player-Id`; JWT no step 10)
 
 ### Etapa 04 - Service Events Contracts
 
@@ -97,32 +97,87 @@ Relatorios locais de teste ficam em `test-runs/` (gitignored), com `summary.json
 
 ### Etapa 06 - Provably Fair (hash chain)
 
+- [x] Modulo `services/games/src/domain/provably-fair/` (dominio puro, sem REST/WS)
 - [x] `SeedChain` — cadeia pre-gerada de seeds com indice
 - [x] `hashRoundSeed` — SHA-256 da seed (compromisso publico)
 - [x] `computeCrashPoint` — HMAC-SHA256 deterministico (estilo Bustabit, ~3% instant 1.00x)
 - [x] `verifyRound` + `verifyChainLink` — hash, crash e encadeamento
 - [x] `FairnessProof` com `algorithmVersion: "v1-chain"`
-- [x] Testes unitarios: vetor fixo, adulteracao hash/crash, chain quebrada
-- [ ] Persistencia REST, runtime e UI (etapas 07–09, 14)
+- [x] Integracao conceitual: `Round.crash({ crashMultiplier: computeCrashPoint(...) })`
+- [x] Testes unitarios (17 novos; 53 no `@crash/games` apos step 07)
+- [x] Persistencia PostgreSQL + `GET /verify` (step 07)
+- [ ] Runtime completo, WebSocket e UI (etapas 08–09, 14)
+
+```text
+Provably Fair — rodada i (FairnessProof + SeedChain)
+====================================================
+
+  Origem: SeedChain.commit(i) -> roundSeed[i] (secreta ate pos-crash)
+
+  +------------------+---------------------------+---------------------------+
+  | Fase             | Publico (cliente/API)     | Interno (servidor)        |
+  +------------------+---------------------------+---------------------------+
+  | betting          | roundHash                 | roundSeed                 |
+  |                  | SHA256(roundSeed)         | nonce, clientSeed?        |
+  +------------------+---------------------------+---------------------------+
+  | closeBets        | —                         | computeCrashPoint()       |
+  |                  |                           | HMAC(seed, client:nonce)  |
+  +------------------+---------------------------+---------------------------+
+  | running -> crash | multiplicador sobe        | crashPoint (fixo)         |
+  +------------------+---------------------------+---------------------------+
+  | pos-crash        | roundSeed (revelada)      | —                         |
+  | (FairnessProof)  | crashPoint                |                           |
+  |                  | nextRoundHash             |                           |
+  |                  | previousRoundHash?        |                           |
+  |                  | roundId                   |                           |
+  |                  | algorithmVersion v1-chain |                           |
+  +------------------+---------------------------+---------------------------+
+  | verifyRound      | crashValid                | recalcula crashPoint      |
+  |                  | chainValid                | nextRoundHash(i)=         |
+  |                  |                           |   roundHash(i+1)          |
+  +------------------+---------------------------+---------------------------+
+
+  Encadeamento (hash chain):
+
+    rodada i                rodada i+1
+    --------                ----------
+    roundHash  <----------  (publicado no betting de i+1)
+    nextRoundHash --------> roundHash
+    roundSeed               roundSeed (revelada so apos crash de i+1)
+```
 
 Ordem por rodada: `publishRoundHash → closeBets → computeCrash → run → revealSeedAndNextHash`.
 
-Detalhes de auditoria para o README final: etapa 16.
+Secao completa de auditoria para o jogador: etapa 16 (README final).
+
+### Etapa 07 - REST APIs
+
+- [x] Migration PostgreSQL `rounds` + `bets` com colunas fairness chain
+- [x] `RoundRepository` / `BetRepository` (Postgres + InMemory para testes)
+- [x] `GET /games/rounds/current` — `committedRoundHash`, `nextRoundHash`, apostas
+- [x] `GET /games/rounds/history` — paginado
+- [x] `GET /games/rounds/:roundId/verify` — `verifyRound` + `crashValid` + `chainValid`
+- [x] `GET /games/bets/me`, `POST /games/bet`, `POST /games/bet/cashout`
+- [x] `POST /wallets`, `GET /wallets/me`
+- [x] Auth dev: header `X-Player-Id` em endpoints privados (JWT Keycloak no step 10)
+- [x] `DomainExceptionFilter` — erros de dominio mapeados para HTTP
+- [x] `RoundBootstrapService` — primeira rodada em `betting` com hash da `SeedChain`
+- [x] Testes unitarios + E2E REST iniciados (2 novos unit games; E2E games + wallets)
+- [ ] Gameplay broker completo (step 08)
 
 ### Proximas etapas
 
-1. **REST APIs** — endpoints do jogo (`/verify`, hash chain)
-2. **Gameplay + Broker + Settlement** — integracao completa com `SeedChain`
-4. **WebSocket** — tempo real
-5. **Auth JWT** — Keycloak integration
-6. **Testes finais + Docker**
-7. **Frontend** — UI completa
-8. **README final + entrega**
+1. **Gameplay + Broker + Settlement** — runtime com `SeedChain` + broker
+2. **WebSocket** — tempo real (hash antes da rodada, seed apos crash)
+3. **Auth JWT** — Keycloak integration (substituir `X-Player-Id`)
+4. **Testes finais + Docker**
+5. **Frontend** — UI completa (hash visivel, link verify)
+6. **README final + entrega**
 
 ## Requisitos Obrigatorios
 
-- [ ] Game Service separado (dominio concluido; REST/gameplay nas etapas 07–08)
-- [x] Wallet Service separado (dominio + persistencia; REST na etapa 07)
+- [ ] Game Service separado (REST concluido; gameplay/runtime no step 08)
+- [x] Wallet Service separado (dominio + persistencia + REST; JWT no step 10)
 - [x] Comunicacao assincrona via RabbitMQ (contratos + pub/sub step 04; gameplay na 08)
 - [ ] Gameplay completo (apostar, multiplicador, cashout, crash, liquidacao)
 - [ ] WebSocket server-to-client
@@ -169,3 +224,6 @@ Game:
 - Bonus apenas apos obrigatorios validados
 - Comunicaçao entre servicos via RabbitMQ (event-driven, exchange `crash.events`)
 - Idempotencia de eventos por `eventId`; cents como string no JSON; sem outbox (step 04)
+- Provably Fair (step 06): `SeedChain` pre-gerada; persistencia fairness em `rounds` (step 07); `verifyRound` reutiliza `computeCrashPoint`; runtime chain no step 08
+
+Diagrama completo do fluxo: secao **Etapa 06** acima.
