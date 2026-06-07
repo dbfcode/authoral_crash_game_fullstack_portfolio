@@ -3,3 +3,6 @@ dist/
 .env
 *.log
 test-runs/
+
+# Local agent roadmap and self-reference notes (not in repo history)
+self-refs/
