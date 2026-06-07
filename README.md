@@ -186,13 +186,60 @@ Variaveis de ambiente do runtime:
 - `GAMES_MULTIPLIER_STEP_HUNDREDTHS` (default `5`)
 - `GAMES_DISABLE_ROUND_ENGINE` (default `0`)
 
+### Etapa 09 - WebSocket Realtime
+
+- [x] Contratos WS tipados em `@crash/shared` (`packages/shared/src/websocket/`)
+- [x] `GameGateway` Socket.IO namespace `/games` — push server→client only (sem `@SubscribeMessage`)
+- [x] Port `GameRealtimePublisher` + implementacoes `SocketGameRealtimePublisher` / `NoopGameRealtimePublisher`
+- [x] `round:snapshot` enviado no connect (rodada atual + historico recente)
+- [x] Emissao de eventos de rodada e apostas a partir do engine, bootstrap, commands e handlers
+- [x] `round-ws.mapper` — seed nunca vaza antes de `round:settled`
+- [x] `GamesIoAdapter` — compatibilidade Bun + Socket.IO
+- [x] `AppModule.register()` — env vars lidas no bootstrap (testes E2E isolados)
+- [x] Testes unitarios (mapper, publisher) + E2E `websocket-realtime.spec.ts`
+- [x] Flag `GAMES_DISABLE_WS=1` para testes REST sem gateway
+
+**URLs de conexao (dev):**
+
+| Destino | URL |
+| ------- | --- |
+| Game Service direto | `http://localhost:4001/games` (namespace Socket.IO) |
+| Via Kong (HTTP upgrade) | `http://localhost:8000/games` — validar manualmente; fallback porta 4001 |
+
+**Eventos WebSocket (fairness):**
+
+| Evento | Campos principais | Seed revelada? |
+| ------ | ----------------- | -------------- |
+| `round:snapshot` | `roundId`, `committedRoundHash`, `bets`, `history` | Nao |
+| `round:betting-started` | `roundId`, `committedRoundHash` | Nao |
+| `round:started` | `roundId`, `currentMultiplier` | Nao |
+| `round:tick` | `roundId`, `currentMultiplier` | Nao |
+| `round:crashed` | `roundId`, `crashPoint` | Nao |
+| `round:settled` | `roundId`, `revealedRoundSeed`, `nextRoundHash`, `crashPoint` | Sim |
+| `round:history-updated` | `items[]` (`roundId`, `crashPoint`, `committedRoundHash`) | Nao |
+| `bet:placed` | `betId`, `roundId`, `playerId`, `amountCents`, `status` | Nao |
+| `bet:cashout` | `betId`, `multiplier`, `payoutCents`, `status` | Nao |
+| `bet:removed` | `betId`, `roundId`, `playerId` | Nao |
+
+Variaveis de ambiente adicionais:
+
+- `GAMES_DISABLE_WS` (default `0`) — desliga gateway WS
+- `GAMES_WS_CORS_ORIGIN` (default `*`) — origens CORS do Socket.IO
+
+**Validacao manual (duas abas):**
+
+1. Subir infra + Game Service (`bun run docker:up` ou `cd services/games && bun run dev`)
+2. Abrir duas abas no browser console ou cliente Socket.IO
+3. Conectar ambas em `http://localhost:4001/games`
+4. Confirmar `round:snapshot` com o mesmo `committedRoundHash`
+5. Durante a rodada, ambas recebem `round:tick` com o mesmo `currentMultiplier`
+
 ### Proximas etapas
 
-1. **WebSocket** — tempo real (hash antes da rodada, seed apos crash)
-3. **Auth JWT** — Keycloak integration (substituir `X-Player-Id`)
-4. **Testes finais + Docker**
-5. **Frontend** — UI completa (hash visivel, link verify)
-6. **README final + entrega**
+1. **Auth JWT** — Keycloak integration (substituir `X-Player-Id`)
+2. **Testes finais + Docker**
+3. **Frontend** — UI completa (hash visivel, link verify, grafico crash)
+4. **README final + entrega**
 
 ## Requisitos Obrigatorios
 
@@ -200,7 +247,7 @@ Variaveis de ambiente do runtime:
 - [x] Wallet Service separado (dominio + persistencia + REST; JWT no step 10)
 - [x] Comunicacao assincrona via RabbitMQ (contratos + pub/sub step 04; gameplay na 08)
 - [x] Gameplay completo (apostar, multiplicador, cashout, crash, liquidacao via broker)
-- [ ] WebSocket server-to-client
+- [x] WebSocket server-to-client
 - [ ] Dinheiro sem ponto flutuante, saldo nunca negativo
 - [ ] Keycloak/OIDC
 - [ ] Backend valida JWT
