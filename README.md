@@ -22,7 +22,7 @@ Bun 1.3, NestJS 11, TypeScript strict, PostgreSQL 18, RabbitMQ, Kong, Keycloak, 
        Round, Bet,       Wallet, Ledger,
        Crash, Fairness   Credit/Debit
               |                |
-              +------ RabbitMQ +
+              +------ RabbitMQ +  (topic: crash.events)
               |                |
               v                v
          PostgreSQL       PostgreSQL
@@ -64,11 +64,30 @@ Relatorios locais de teste ficam em `test-runs/` (gitignored), com `summary.json
 - [x] `.gitignore`
 - [x] `bun install` funcional
 
+### Etapa 03 - Wallet Service
+
+- [x] Dominio Wallet com saldo em centavos (`bigint`)
+- [x] MoneyCents, LedgerEntry e erros de dominio
+- [x] WalletService (criar, saldo, credito/debito internos)
+- [x] Handlers internos para reserva, cashout e estorno
+- [x] InMemoryWalletRepository para testes unitarios
+- [x] PostgresWalletRepository + migration SQL
+- [x] Testes unitarios de dominio e application (26 testes)
+- [ ] REST `POST /wallets` e `GET /wallets/me` (etapa 07 + auth)
+
+### Etapa 04 - Service Events Contracts
+
+- [x] `@crash/shared` com envelope tipado (`eventId`, `correlationId`, `timestamp`)
+- [x] Eventos: BetPlaced/Reserved/Rejected, Cashout Requested/Paid/Rejected, BetLostSettled, WalletCredited/Debited
+- [x] Exchange `crash.events` (topic) + filas `wallet-service.events` / `game-service.events`
+- [x] Wallet consumer publica respostas; Game consumer stubs registram eventos
+- [x] Idempotencia basica por `eventId` (`processed_events`)
+- [x] `amountCents` serializado como string no wire format
+- [x] Testes unitarios shared + messaging (40 testes no monorepo)
+
 ### Proximas etapas
 
-1. **Wallet Service** — dominio, testes, endpoints
-2. **Event Contracts** — eventos RabbitMQ
-3. **Game Domain** — Round, Bet, lifecycle
+1. **Game Domain** — Round, Bet, lifecycle
 4. **Provably Fair** — algoritmo e verificacao
 5. **REST APIs** — endpoints do jogo
 6. **Gameplay + Broker + Settlement** — integracao completa
@@ -81,8 +100,8 @@ Relatorios locais de teste ficam em `test-runs/` (gitignored), com `summary.json
 ## Requisitos Obrigatorios
 
 - [ ] Game Service separado
-- [ ] Wallet Service separado
-- [ ] Comunicacao assincrona via RabbitMQ
+- [x] Wallet Service separado (dominio + persistencia; REST na etapa 07)
+- [x] Comunicacao assincrona via RabbitMQ (contratos + pub/sub step 04; gameplay na 08)
 - [ ] Gameplay completo (apostar, multiplicador, cashout, crash, liquidacao)
 - [ ] WebSocket server-to-client
 - [ ] Dinheiro sem ponto flutuante, saldo nunca negativo
@@ -90,7 +109,7 @@ Relatorios locais de teste ficam em `test-runs/` (gitignored), com `summary.json
 - [ ] Backend valida JWT
 - [ ] Frontend funcional
 - [ ] Docker Compose executavel por `bun run docker:up`
-- [ ] Testes unitarios de dominio
+- [ ] Testes unitarios de dominio (Wallet concluido; Game e Provably Fair pendentes)
 - [ ] Testes E2E dos fluxos criticos
 - [ ] README com instrucoes, decisoes, trade-offs e checklist
 
@@ -126,4 +145,5 @@ Game:
 - TDD pratico (RED → GREEN → REFACTOR) em dominio/backend; ver `.cursor/rules/tdd-workflow.mdc`
 - Testes junto com cada bloco funcional (unitarios primeiro, E2E depois); `bun run test:unit` deve passar
 - Bonus apenas apos obrigatorios validados
-- Comunicaçao entre servicos via RabbitMQ (event-driven)
+- Comunicaçao entre servicos via RabbitMQ (event-driven, exchange `crash.events`)
+- Idempotencia de eventos por `eventId`; cents como string no JSON; sem outbox (step 04)
