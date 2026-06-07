@@ -1,3 +1,3 @@
 # @crash/shared
 
-Pacote compartilhado do monorepo. Contratos de eventos e tipos comuns serao adicionados na etapa 04.
+Pacote compartilhado do monorepo: contratos de eventos RabbitMQ, envelope tipado, routing keys e serializacao de centavos.
