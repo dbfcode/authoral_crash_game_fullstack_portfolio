@@ -93,13 +93,26 @@ Relatorios locais de teste ficam em `test-runs/` (gitignored), com `summary.json
 - [x] Limites de aposta R$ 1,00 – R$ 1.000,00; uma aposta por jogador/rodada
 - [x] Cashout com payout `aposta × multiplicador`; crash marca perdas
 - [x] Testes unitarios de dominio (31 novos; 34 no `@crash/games`)
-- [ ] Provably Fair e integracao broker (etapas 06 e 08)
+- [ ] Integracao broker (etapa 08)
+
+### Etapa 06 - Provably Fair (hash chain)
+
+- [x] `SeedChain` — cadeia pre-gerada de seeds com indice
+- [x] `hashRoundSeed` — SHA-256 da seed (compromisso publico)
+- [x] `computeCrashPoint` — HMAC-SHA256 deterministico (estilo Bustabit, ~3% instant 1.00x)
+- [x] `verifyRound` + `verifyChainLink` — hash, crash e encadeamento
+- [x] `FairnessProof` com `algorithmVersion: "v1-chain"`
+- [x] Testes unitarios: vetor fixo, adulteracao hash/crash, chain quebrada
+- [ ] Persistencia REST, runtime e UI (etapas 07–09, 14)
+
+Ordem por rodada: `publishRoundHash → closeBets → computeCrash → run → revealSeedAndNextHash`.
+
+Detalhes de auditoria para o README final: etapa 16.
 
 ### Proximas etapas
 
-1. **Provably Fair** — algoritmo e verificacao
-2. **REST APIs** — endpoints do jogo
-3. **Gameplay + Broker + Settlement** — integracao completa
+1. **REST APIs** — endpoints do jogo (`/verify`, hash chain)
+2. **Gameplay + Broker + Settlement** — integracao completa com `SeedChain`
 4. **WebSocket** — tempo real
 5. **Auth JWT** — Keycloak integration
 6. **Testes finais + Docker**
@@ -118,7 +131,7 @@ Relatorios locais de teste ficam em `test-runs/` (gitignored), com `summary.json
 - [ ] Backend valida JWT
 - [ ] Frontend funcional
 - [ ] Docker Compose executavel por `bun run docker:up`
-- [x] Testes unitarios de dominio (Wallet + Game concluidos; Provably Fair na etapa 06)
+- [x] Testes unitarios de dominio (Wallet + Game + Provably Fair; REST/gameplay nas etapas 07–08)
 - [ ] Testes E2E dos fluxos criticos
 - [ ] README com instrucoes, decisoes, trade-offs e checklist
 
