@@ -73,7 +73,7 @@ Relatorios locais de teste ficam em `test-runs/` (gitignored), com `summary.json
 - [x] InMemoryWalletRepository para testes unitarios
 - [x] PostgresWalletRepository + migration SQL
 - [x] Testes unitarios de dominio e application (26 testes)
-- [x] REST `POST /wallets` e `GET /wallets/me` (auth dev via header `X-Player-Id`; JWT no step 10)
+- [x] REST `POST /wallets` e `GET /wallets/me` (JWT Bearer Keycloak; ver Etapa 10)
 
 ### Etapa 04 - Service Events Contracts
 
@@ -159,7 +159,7 @@ Secao completa de auditoria para o jogador: etapa 16 (README final).
 - [x] `GET /games/rounds/:roundId/verify` — `verifyRound` + `crashValid` + `chainValid`
 - [x] `GET /games/bets/me`, `POST /games/bet`, `POST /games/bet/cashout`
 - [x] `POST /wallets`, `GET /wallets/me`
-- [x] Auth dev: header `X-Player-Id` em endpoints privados (JWT Keycloak no step 10)
+- [x] Auth JWT Keycloak em endpoints privados (Etapa 10)
 - [x] `DomainExceptionFilter` — erros de dominio mapeados para HTTP
 - [x] `RoundBootstrapService` — primeira rodada em `betting` com hash da `SeedChain`
 - [x] Testes unitarios + E2E REST iniciados (2 novos unit games; E2E games + wallets)
@@ -201,25 +201,29 @@ Variaveis de ambiente do runtime:
 
 **URLs de conexao (dev):**
 
-| Destino | URL |
-| ------- | --- |
-| Game Service direto | `http://localhost:4001/games` (namespace Socket.IO) |
+
+| Destino                 | URL                                                                      |
+| ----------------------- | ------------------------------------------------------------------------ |
+| Game Service direto     | `http://localhost:4001/games` (namespace Socket.IO)                      |
 | Via Kong (HTTP upgrade) | `http://localhost:8000/games` — validar manualmente; fallback porta 4001 |
+
 
 **Eventos WebSocket (fairness):**
 
-| Evento | Campos principais | Seed revelada? |
-| ------ | ----------------- | -------------- |
-| `round:snapshot` | `roundId`, `committedRoundHash`, `bets`, `history` | Nao |
-| `round:betting-started` | `roundId`, `committedRoundHash` | Nao |
-| `round:started` | `roundId`, `currentMultiplier` | Nao |
-| `round:tick` | `roundId`, `currentMultiplier` | Nao |
-| `round:crashed` | `roundId`, `crashPoint` | Nao |
-| `round:settled` | `roundId`, `revealedRoundSeed`, `nextRoundHash`, `crashPoint` | Sim |
-| `round:history-updated` | `items[]` (`roundId`, `crashPoint`, `committedRoundHash`) | Nao |
-| `bet:placed` | `betId`, `roundId`, `playerId`, `amountCents`, `status` | Nao |
-| `bet:cashout` | `betId`, `multiplier`, `payoutCents`, `status` | Nao |
-| `bet:removed` | `betId`, `roundId`, `playerId` | Nao |
+
+| Evento                  | Campos principais                                             | Seed revelada? |
+| ----------------------- | ------------------------------------------------------------- | -------------- |
+| `round:snapshot`        | `roundId`, `committedRoundHash`, `bets`, `history`            | Nao            |
+| `round:betting-started` | `roundId`, `committedRoundHash`                               | Nao            |
+| `round:started`         | `roundId`, `currentMultiplier`                                | Nao            |
+| `round:tick`            | `roundId`, `currentMultiplier`                                | Nao            |
+| `round:crashed`         | `roundId`, `crashPoint`                                       | Nao            |
+| `round:settled`         | `roundId`, `revealedRoundSeed`, `nextRoundHash`, `crashPoint` | Sim            |
+| `round:history-updated` | `items[]` (`roundId`, `crashPoint`, `committedRoundHash`)     | Nao            |
+| `bet:placed`            | `betId`, `roundId`, `playerId`, `amountCents`, `status`       | Nao            |
+| `bet:cashout`           | `betId`, `multiplier`, `payoutCents`, `status`                | Nao            |
+| `bet:removed`           | `betId`, `roundId`, `playerId`                                | Nao            |
+
 
 Variaveis de ambiente adicionais:
 
@@ -234,23 +238,62 @@ Variaveis de ambiente adicionais:
 4. Confirmar `round:snapshot` com o mesmo `committedRoundHash`
 5. Durante a rodada, ambas recebem `round:tick` com o mesmo `currentMultiplier`
 
+### Etapa 10 - Auth JWT
+
+- [x] Validacao Bearer JWT Keycloak nos endpoints privados (games + wallets)
+- [x] `verifyKeycloakAccessToken` em `@crash/shared` (JWKS + issuer via `jose`)
+- [x] `PlayerAuthGuard` async — `sub` → `playerId`; `preferred_username` → `username`
+- [x] Endpoints publicos intactos: `GET /games/rounds/*`, health, WebSocket read
+- [x] `directAccessGrantsEnabled` no client Keycloak (smoke/E2E com token real)
+- [x] `AUTH_DEV_BYPASS=1` para E2E in-memory (mesmo padrao de `GAMES_USE_IN_MEMORY`)
+- [x] E2E `auth-jwt.spec.ts` (skip se Keycloak indisponivel)
+- [ ] Login frontend OIDC (step 15)
+
+**Endpoints privados (exigem `Authorization: Bearer <JWT>`):**
+
+- `POST /wallets`, `GET /wallets/me`
+- `GET /games/bets/me`, `POST /games/bet`, `POST /games/bet/cashout`
+
+**Usuario de teste Keycloak:** `player` / `player123` (realm `crash-game`, client `crash-game-client`)
+
+**Variaveis de ambiente:**
+
+- `KEYCLOAK_URL`, `KEYCLOAK_REALM`, `KEYCLOAK_CLIENT_ID` — ja existentes
+- `KEYCLOAK_ISSUER` (default derivado) — usar `http://localhost:8080/realms/crash-game` em Docker (issuer publico; JWKS via URL interna)
+- `AUTH_DEV_BYPASS` (default `0`) — `1` aceita header `X-Player-Id` somente em testes locais
+
+**Smoke manual (com Keycloak no ar):**
+
+```bash
+TOKEN=$(curl -s -X POST "http://localhost:8080/realms/crash-game/protocol/openid-connect/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=password" \
+  -d "client_id=crash-game-client" \
+  -d "username=player" \
+  -d "password=player123" | jq -r .access_token)
+
+curl -H "Authorization: Bearer $TOKEN" http://localhost:4002/wallets/me
+curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  http://localhost:4001/games/bet -d '{"amountCents":"100"}'
+```
+
 ### Proximas etapas
 
-1. **Auth JWT** — Keycloak integration (substituir `X-Player-Id`)
-2. **Testes finais + Docker**
-3. **Frontend** — UI completa (hash visivel, link verify, grafico crash)
-4. **README final + entrega**
+1. **Etapa 11 — Prisma ORM** — [guia de execução](docs/etapas/etapa-11-prisma-orm.md) (opcional pós-MVP; stack aceita ORM no challenge)
+2. **Etapa 12 — Testes finais + Docker**
+3. **Etapa 13 — Frontend** — UI completa (hash visivel, link verify, grafico crash)
+4. **Etapa 14 — README final + entrega**
 
 ## Requisitos Obrigatorios
 
 - [x] Game Service separado (REST + runtime gameplay broker)
-- [x] Wallet Service separado (dominio + persistencia + REST; JWT no step 10)
+- [x] Wallet Service separado (dominio + persistencia + REST + JWT)
 - [x] Comunicacao assincrona via RabbitMQ (contratos + pub/sub step 04; gameplay na 08)
 - [x] Gameplay completo (apostar, multiplicador, cashout, crash, liquidacao via broker)
 - [x] WebSocket server-to-client
 - [ ] Dinheiro sem ponto flutuante, saldo nunca negativo
-- [ ] Keycloak/OIDC
-- [ ] Backend valida JWT
+- [x] Keycloak/OIDC (realm importado; login UI no step 15)
+- [x] Backend valida JWT
 - [ ] Frontend funcional
 - [ ] Docker Compose executavel por `bun run docker:up`
 - [x] Testes unitarios de dominio (Wallet + Game + Provably Fair; REST/gameplay nas etapas 07–08)
@@ -278,6 +321,7 @@ Game:
 **Abordagem atual (A):** Cada serviço tem seu próprio `Dockerfile` e o contexto de build é seu diretório (`services/games/`, `services/wallets/`). O `package.json` é copiado primeiro, `bun install` roda, e depois o resto do código é copiado. O `bun.lock` (raiz do monorepo) não entra no contexto de build — as versões são resolvidas do registry. Simples e funcional para dev local.
 
 **Alternativa futura (B — monorepo-aware):** Mudar o contexto de build para a raiz do monorepo e ajustar os `Dockerfile` para navegar até o serviço específico. Isso permitiria usar o `bun.lock` global (builds reproduzíveis com `--frozen-lockfile`) e compartilhar o cache de camadas entre serviços. Postergado por enquanto porque:
+
 - A abordagem A já funciona e atende ao requisito eliminatório (`bun run docker:up`)
 - A abordagem B adicionaria complexidade de Docker multistage com contextos compartilhados sem benefício imediato
 - Será revisitada se o lockfile se provar necessário para consistência entre dev e produção
@@ -292,5 +336,7 @@ Game:
 - Comunicaçao entre servicos via RabbitMQ (event-driven, exchange `crash.events`)
 - Idempotencia de eventos por `eventId`; cents como string no JSON; sem outbox (step 04)
 - Provably Fair (step 06): `SeedChain` pre-gerada; persistencia fairness em `rounds` (step 07); `verifyRound` reutiliza `computeCrashPoint`; runtime chain no step 08 (`RoundEngineService`)
+- Persistencia atual: `pg` + SQL manual + repositorios Postgres; migracao opcional para Prisma na [Etapa 11](docs/etapas/etapa-11-prisma-orm.md) (pos-MVP)
+- Auth JWT Keycloak (Etapa 10): Bearer nos endpoints privados; `KEYCLOAK_ISSUER` para validar `iss`; `AUTH_DEV_BYPASS=1` somente em testes locais
 
 Diagrama completo do fluxo: secao **Etapa 06** acima.
