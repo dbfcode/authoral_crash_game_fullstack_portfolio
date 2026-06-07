@@ -11,11 +11,19 @@ import { Round } from '../../src/domain/round';
 import { RoundStatus } from '../../src/domain/round-status';
 import { MAX_BET_CENTS, MIN_BET_CENTS } from '../../src/domain/bet-limits';
 
+function placeActiveBet(
+  round: Round,
+  params: { betId: string; playerId: string; amountCents: bigint },
+) {
+  round.placeBet(params);
+  round.confirmBet(params.playerId);
+}
+
 describe('Round', () => {
   it('happy path: bet, run, cashout at 2.00x', () => {
     const round = Round.create({ roundId: 'round-1' });
 
-    round.placeBet({
+    placeActiveBet(round, {
       betId: 'bet-1',
       playerId: 'player-1',
       amountCents: 500n,
@@ -33,7 +41,7 @@ describe('Round', () => {
 
   it('cashout at 1.00x returns bet amount', () => {
     const round = Round.create({ roundId: 'round-1' });
-    round.placeBet({
+    placeActiveBet(round, {
       betId: 'bet-1',
       playerId: 'player-1',
       amountCents: 250n,
@@ -102,7 +110,7 @@ describe('Round', () => {
 
   it('rejects cashOut during betting', () => {
     const round = Round.create({ roundId: 'round-1' });
-    round.placeBet({
+    placeActiveBet(round, {
       betId: 'bet-1',
       playerId: 'player-1',
       amountCents: 500n,
@@ -130,12 +138,12 @@ describe('Round', () => {
 
   it('crash: player A cashes out, player B loses', () => {
     const round = Round.create({ roundId: 'round-1' });
-    round.placeBet({
+    placeActiveBet(round, {
       betId: 'bet-a',
       playerId: 'player-a',
       amountCents: 500n,
     });
-    round.placeBet({
+    placeActiveBet(round, {
       betId: 'bet-b',
       playerId: 'player-b',
       amountCents: 300n,
@@ -190,7 +198,7 @@ describe('Round', () => {
     const round = Round.create({ roundId: 'round-1' });
     expect(round.status).toBe(RoundStatus.BETTING);
 
-    round.placeBet({
+    placeActiveBet(round, {
       betId: 'bet-1',
       playerId: 'player-1',
       amountCents: 1000n,

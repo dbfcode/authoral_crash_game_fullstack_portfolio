@@ -5,7 +5,7 @@ import { BetStatus } from '../../src/domain/bet-status';
 import { Multiplier } from '../../src/domain/multiplier';
 
 describe('Bet', () => {
-  it('creates active bet', () => {
+  it('creates pending bet', () => {
     const bet = Bet.create({
       id: 'bet-1',
       playerId: 'player-1',
@@ -13,9 +13,21 @@ describe('Bet', () => {
       amountCents: 500n,
     });
 
-    expect(bet.status).toBe(BetStatus.ACTIVE);
+    expect(bet.status).toBe(BetStatus.PENDING);
     expect(bet.amountCents).toBe(500n);
     expect(bet.payoutCents).toBeNull();
+  });
+
+  it('confirms pending bet to active', () => {
+    const bet = Bet.create({
+      id: 'bet-1',
+      playerId: 'player-1',
+      roundId: 'round-1',
+      amountCents: 500n,
+    });
+
+    const active = bet.confirm();
+    expect(active.status).toBe(BetStatus.ACTIVE);
   });
 
   it('cashes out with payout', () => {
@@ -24,7 +36,7 @@ describe('Bet', () => {
       playerId: 'player-1',
       roundId: 'round-1',
       amountCents: 500n,
-    });
+    }).confirm();
 
     const cashed = bet.cashOut(Multiplier.fromDecimalString('2.00'));
 
@@ -34,14 +46,16 @@ describe('Bet', () => {
   });
 
   it('rejects second cashout', () => {
-    const bet = Bet.create({
+    const cashed = Bet.create({
       id: 'bet-1',
       playerId: 'player-1',
       roundId: 'round-1',
       amountCents: 500n,
-    }).cashOut(Multiplier.ofHundredths(100));
+    })
+      .confirm()
+      .cashOut(Multiplier.ofHundredths(100));
 
-    expect(() => bet.cashOut(Multiplier.ofHundredths(200))).toThrow(
+    expect(() => cashed.cashOut(Multiplier.ofHundredths(200))).toThrow(
       BetAlreadyCashedOutError,
     );
   });
@@ -52,7 +66,7 @@ describe('Bet', () => {
       playerId: 'player-1',
       roundId: 'round-1',
       amountCents: 500n,
-    });
+    }).confirm();
 
     const lost = bet.markLost();
     expect(lost.status).toBe(BetStatus.LOST);
@@ -64,7 +78,9 @@ describe('Bet', () => {
       playerId: 'player-1',
       roundId: 'round-1',
       amountCents: 500n,
-    }).cashOut(Multiplier.ofHundredths(150));
+    })
+      .confirm()
+      .cashOut(Multiplier.ofHundredths(150));
 
     const afterCrash = bet.markLost();
     expect(afterCrash.status).toBe(BetStatus.CASHED_OUT);

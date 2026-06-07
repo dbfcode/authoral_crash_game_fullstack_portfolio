@@ -10,6 +10,7 @@ describe('REST games', () => {
 
   beforeAll(async () => {
     process.env.GAMES_USE_IN_MEMORY = '1';
+    process.env.GAMES_DISABLE_ROUND_ENGINE = '1';
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -23,6 +24,7 @@ describe('REST games', () => {
   afterAll(async () => {
     await app.close();
     delete process.env.GAMES_USE_IN_MEMORY;
+    delete process.env.GAMES_DISABLE_ROUND_ENGINE;
   });
 
   it('GET /games/rounds/current returns committedRoundHash after bootstrap', async () => {
@@ -52,13 +54,14 @@ describe('REST games', () => {
   });
 
   it('POST /games/bet places bet on current round', async () => {
+    const playerId = `player-rest-${Date.now()}`;
     const response = await request(app.getHttpServer())
       .post('/games/bet')
-      .set('X-Player-Id', 'player-1')
+      .set('X-Player-Id', playerId)
       .send({ amountCents: '500' });
 
     expect(response.status).toBe(201);
     expect(response.body.amountCents).toBe('500');
-    expect(response.body.status).toBe('active');
+    expect(response.body.status).toBe('pending');
   });
 });
