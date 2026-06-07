@@ -9,3 +9,4 @@ export * from './websocket/payloads/bet-events';
 export * from './messaging/queues';
 export * from './messaging/routing-keys';
 export * from './messaging/serialization';
+export * from './auth/verify-keycloak-access-token';
