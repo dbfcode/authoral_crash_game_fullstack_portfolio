@@ -39,15 +39,20 @@ bun run docker:down      # Para containers
 bun run docker:prune     # Remove tudo
 bun run test:unit        # Testes unitarios
 bun run test:e2e         # Testes E2E
+bun run test:unit:report # Testes unitarios com relatorio em test-runs/<timestamp>-unit/
 ```
+
+Relatorios locais de teste ficam em `test-runs/` (gitignored), com `summary.json`, `output.log` e logs por workspace.
 
 ## Status do Projeto
 
 ### Etapa 02 - Project Setup
 
 - [x] Root `package.json` com workspaces e scripts
-- [x] `services/games` com scaffold NestJS + DDD
-- [x] `services/wallets` com scaffold NestJS + DDD
+- [x] `services/games` com scaffold NestJS (camadas DDD reservadas; presentation implementada)
+- [x] `services/wallets` com scaffold NestJS (camadas DDD reservadas; presentation implementada)
+- [x] `packages/shared` placeholder para contratos futuros
+- [x] Smoke tests de health check (`GET /games/health`, `GET /wallets/health`)
 - [x] `frontend/` placeholder com Vite + React
 - [x] Docker Compose com PostgreSQL, RabbitMQ, Keycloak, Kong
 - [x] Dockerfiles para game-service e wallet-service
@@ -118,6 +123,7 @@ Game:
 
 - Dinheiro em centavos inteiros (BIGINT), nunca `number` para valores monetarios
 - REST para acoes do jogador, WebSocket apenas para push server-to-client
-- Testes junto com cada bloco funcional (unitarios primeiro, E2E depois)
+- TDD pratico (RED → GREEN → REFACTOR) em dominio/backend; ver `.cursor/rules/tdd-workflow.mdc`
+- Testes junto com cada bloco funcional (unitarios primeiro, E2E depois); `bun run test:unit` deve passar
 - Bonus apenas apos obrigatorios validados
 - Comunicaçao entre servicos via RabbitMQ (event-driven)
