@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../auth/AuthProvider';
 import { ApiError } from '../api/client';
 import { cashOut, placeBet } from '../api/games';
@@ -20,6 +20,13 @@ export function GamePage() {
   const { showToast } = useToast();
   const [placing, setPlacing] = useState(false);
   const [cashingOut, setCashingOut] = useState(false);
+  const [lastRoundResult, setLastRoundResult] = useState<{
+    status: 'lost' | 'cashed_out';
+    amountCents: string;
+    payoutCents: string | null;
+    cashoutMultiplier: string | null;
+  } | null>(null);
+  const lastBetStatusRef = useRef<string | null>(null);
 
   const myBet = useMemo(() => {
     if (!playerId) {
@@ -27,6 +34,25 @@ export function GamePage() {
     }
     return game.bets.find((b) => b.playerId === playerId) ?? null;
   }, [game.bets, playerId]);
+
+  useEffect(() => {
+    if (!myBet || !playerId) {
+      return;
+    }
+    if (
+      myBet.status !== lastBetStatusRef.current &&
+      (myBet.status === 'lost' || myBet.status === 'cashed_out')
+    ) {
+      setLastRoundResult({
+        status: myBet.status,
+        amountCents: myBet.amountCents,
+        payoutCents: myBet.payoutCents,
+        cashoutMultiplier: myBet.cashoutMultiplier,
+      });
+      void refreshWallet();
+    }
+    lastBetStatusRef.current = myBet.status;
+  }, [myBet, playerId, refreshWallet]);
 
   const handleBet = async (amountCents: string) => {
     setPlacing(true);
@@ -36,6 +62,8 @@ export function GamePage() {
         return;
       }
       await placeBet(token, amountCents);
+      setLastRoundResult(null);
+      lastBetStatusRef.current = null;
       showToast('Aposta enviada — aguardando confirmação', 'info');
       await refreshWallet();
     } catch (error) {
@@ -94,6 +122,7 @@ export function GamePage() {
             hasBetThisRound={!!myBet}
             placing={placing}
             cashingOut={cashingOut}
+            lastRoundResult={lastRoundResult}
             onBet={handleBet}
             onCashOut={handleCashOut}
             myBetAmountCents={myBet ? BigInt(myBet.amountCents) : null}

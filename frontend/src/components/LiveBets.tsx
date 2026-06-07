@@ -42,20 +42,27 @@ export function LiveBets({ bets, playerId, username }: Props) {
             ) : (
               bets.map((bet) => {
                 const cashedOut = bet.status === 'cashed_out';
+                const lost = bet.status === 'lost';
+                const rowClass = cashedOut
+                  ? 'text-casino-accent'
+                  : lost
+                    ? 'text-casino-danger'
+                    : 'text-gray-200';
+                const statusLabel =
+                  cashedOut && bet.cashoutMultiplier
+                    ? `Ganhou @ ${bet.cashoutMultiplier}x`
+                    : lost
+                      ? 'Perdeu'
+                      : bet.status === 'cashed_out'
+                        ? 'Ganhou'
+                        : bet.status;
                 return (
-                  <tr
-                    key={bet.betId}
-                    className={cashedOut ? 'text-casino-accent' : 'text-gray-200'}
-                  >
+                  <tr key={bet.betId} className={rowClass}>
                     <td className="py-1 pr-2">{displayName(bet, playerId, username)}</td>
                     <td className="py-1 pr-2 tabular-nums">
                       {formatCents(BigInt(bet.amountCents))}
                     </td>
-                    <td className="py-1 capitalize">
-                      {bet.status === 'cashed_out' && bet.cashoutMultiplier
-                        ? `${bet.status} @ ${bet.cashoutMultiplier}x`
-                        : bet.status}
-                    </td>
+                    <td className="py-1">{statusLabel}</td>
                   </tr>
                 );
               })

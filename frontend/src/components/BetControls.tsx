@@ -5,6 +5,13 @@ import {
   parseMoneyInputToCents,
 } from '../utils/money';
 
+type RoundResult = {
+  status: 'lost' | 'cashed_out';
+  amountCents: string;
+  payoutCents: string | null;
+  cashoutMultiplier: string | null;
+};
+
 type Props = {
   status: string;
   currentMultiplier: string | null;
@@ -12,6 +19,7 @@ type Props = {
   hasBetThisRound: boolean;
   placing: boolean;
   cashingOut: boolean;
+  lastRoundResult: RoundResult | null;
   onBet: (amountCents: string) => Promise<void>;
   onCashOut: () => Promise<void>;
   myBetAmountCents: bigint | null;
@@ -24,6 +32,7 @@ export function BetControls({
   hasBetThisRound,
   placing,
   cashingOut,
+  lastRoundResult,
   onBet,
   onCashOut,
   myBetAmountCents,
@@ -88,6 +97,22 @@ export function BetControls({
           <span className="font-semibold text-casino-accent">
             {formatCents(potentialPayout)}
           </span>
+        </p>
+      ) : null}
+      {lastRoundResult?.status === 'cashed_out' ? (
+        <p className="rounded-lg border border-casino-accent/40 bg-casino-accent/10 px-3 py-2 text-sm text-casino-accent">
+          Você ganhou{' '}
+          {lastRoundResult.payoutCents
+            ? formatCents(BigInt(lastRoundResult.payoutCents))
+            : '—'}
+          {lastRoundResult.cashoutMultiplier
+            ? ` @ ${lastRoundResult.cashoutMultiplier}x`
+            : ''}
+        </p>
+      ) : null}
+      {lastRoundResult?.status === 'lost' ? (
+        <p className="rounded-lg border border-casino-danger/40 bg-casino-danger/10 px-3 py-2 text-sm text-casino-danger">
+          Você perdeu {formatCents(BigInt(lastRoundResult.amountCents))} nesta rodada.
         </p>
       ) : null}
     </section>

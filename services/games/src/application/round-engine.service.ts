@@ -27,6 +27,7 @@ import type { GameRealtimePublisher } from './ports/game-realtime.publisher';
 import type { RoundRepository } from './ports/round.repository';
 import { RoundRecord } from './models/round-record';
 import {
+  toBetPlacedPayload,
   toBettingStartedPayload,
   toHistoryItems,
   toRoundCrashedPayload,
@@ -168,6 +169,11 @@ export class RoundEngineService implements OnModuleInit, OnModuleDestroy {
 
       fresh.round.crash({ crashMultiplier: crashAt });
       await this.roundRepository.save(fresh);
+      for (const bet of fresh.round.bets) {
+        if (bet.status === BetStatus.LOST) {
+          this.realtime.broadcastBetPlaced(toBetPlacedPayload(bet));
+        }
+      }
       this.realtime.broadcastCrashed(toRoundCrashedPayload(fresh));
       await this.revealAndPrepareNextRound(fresh);
     });
@@ -285,6 +291,11 @@ export class RoundEngineService implements OnModuleInit, OnModuleDestroy {
 
       fresh.round.crash({ crashMultiplier: crashPoint! });
       await this.roundRepository.save(fresh);
+      for (const bet of fresh.round.bets) {
+        if (bet.status === BetStatus.LOST) {
+          this.realtime.broadcastBetPlaced(toBetPlacedPayload(bet));
+        }
+      }
       this.realtime.broadcastCrashed(toRoundCrashedPayload(fresh));
       await this.revealAndPrepareNextRound(fresh);
     });

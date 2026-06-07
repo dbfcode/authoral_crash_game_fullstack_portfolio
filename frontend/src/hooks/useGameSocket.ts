@@ -165,12 +165,19 @@ export function useGameSocket(enabled: boolean) {
       }));
     };
 
-    const onBetPlaced = (payload: BetItem) => {
+    const mergeBet = (payload: BetItem & { multiplier?: string }) => {
+      const normalized: BetItem = {
+        ...payload,
+        cashoutMultiplier:
+          payload.cashoutMultiplier ?? payload.multiplier ?? null,
+      };
       setState((prev) => {
-        const exists = prev.bets.some((b) => b.betId === payload.betId);
+        const exists = prev.bets.some((b) => b.betId === normalized.betId);
         const bets = exists
-          ? prev.bets.map((b) => (b.betId === payload.betId ? { ...b, ...payload } : b))
-          : [...prev.bets, payload];
+          ? prev.bets.map((b) =>
+              b.betId === normalized.betId ? { ...b, ...normalized } : b,
+            )
+          : [...prev.bets, normalized];
         return { ...prev, bets };
       });
     };
@@ -191,8 +198,8 @@ export function useGameSocket(enabled: boolean) {
     socket.on(WsEventTypes.ROUND_CRASHED, onCrashed);
     socket.on(WsEventTypes.ROUND_SETTLED, onSettled);
     socket.on(WsEventTypes.ROUND_HISTORY_UPDATED, onHistoryUpdated);
-    socket.on(WsEventTypes.BET_PLACED, onBetPlaced);
-    socket.on(WsEventTypes.BET_CASHOUT, onBetPlaced);
+    socket.on(WsEventTypes.BET_PLACED, mergeBet);
+    socket.on(WsEventTypes.BET_CASHOUT, mergeBet);
     socket.on(WsEventTypes.BET_REMOVED, onBetRemoved);
 
     return () => {
