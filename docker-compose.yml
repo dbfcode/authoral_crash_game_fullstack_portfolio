@@ -91,6 +91,8 @@ services:
       KEYCLOAK_URL: http://keycloak:8080
       KEYCLOAK_REALM: crash-game
       KEYCLOAK_CLIENT_ID: crash-game-client
+      KEYCLOAK_ISSUER: http://localhost:8080/realms/crash-game
+      AUTH_DEV_BYPASS: "0"
     restart: unless-stopped
 
   wallet-service:
@@ -111,6 +113,8 @@ services:
       KEYCLOAK_URL: http://keycloak:8080
       KEYCLOAK_REALM: crash-game
       KEYCLOAK_CLIENT_ID: crash-game-client
+      KEYCLOAK_ISSUER: http://localhost:8080/realms/crash-game
+      AUTH_DEV_BYPASS: "0"
     restart: unless-stopped
 
 volumes:
