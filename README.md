@@ -39,10 +39,13 @@ bun run docker:down      # Para containers
 bun run docker:prune     # Remove tudo
 bun run test:unit        # Testes unitarios
 bun run test:e2e         # Testes E2E
+bun run test:required:report  # Relatorio eliminatorio (unit + E2E + manifest) em test-runs/required-tests/
 bun run test:unit:report # Testes unitarios com relatorio em test-runs/<timestamp>-unit/
 ```
 
-Relatorios locais de teste ficam em `test-runs/` (gitignored), com `summary.json`, `output.log` e logs por workspace.
+Relatorios locais de teste ficam em `test-runs/` (gitignored), com `summary.json`, `output.log` e logs por workspace. O relatorio **required** (Etapa 12) fica em `test-runs/required-tests/<timestamp>/`.
+
+**Pre-requisito Etapa 12:** `bun run docker:up` antes de `bun run test:required:report`.
 
 ## Status do Projeto
 
@@ -277,12 +280,37 @@ curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/jso
   http://localhost:4001/games/bet -d '{"amountCents":"100"}'
 ```
 
+### Etapa 12 - Required Tests
+
+- [x] Script `test:required:report` — unit + E2E com probes de infra em `manifest.json`
+- [x] E2E gameplay-broker — 5 fluxos criticos (insufficient, duplicate, running, cashout, crash)
+- [x] E2E auth-jwt com Keycloak real (nao skip)
+- [x] E2E rabbitmq-wallet, websocket-realtime, REST games/wallets
+- [x] Relatorio em `test-runs/required-tests/<timestamp>/`
+
+**Comando:**
+
+```bash
+bun run docker:up
+bun run test:required:report
+```
+
+O script pausa `game-service` e `wallet-service` durante E2E (filas RabbitMQ compartilhadas) e os reinicia ao final. Verifique `manifest.json` (`infra` OK, `e2ePausedDocker: true`) e `summary.json` (`exitCode: 0`).
+
+**Ultimo run verificado:** `test-runs/required-tests/2026-06-07T19-19-43/` (exit 0, probes OK).
+
+**Validacoes manuais** (preencher em `manual-checklist.md` do run):
+
+- WS 2 abas — mesmo `committedRoundHash` e ticks (`http://localhost:4001/games`)
+- Kong — `curl http://localhost:8000/games/rounds/current` (200)
+- Smoke JWT — comandos Etapa 10 acima
+- `docker compose down -v && bun run docker:up` — sobe sem passos manuais
+
 ### Proximas etapas
 
 1. **Etapa 11 — Prisma ORM** — [guia de execução](docs/etapas/etapa-11-prisma-orm.md) (opcional pós-MVP; stack aceita ORM no challenge)
-2. **Etapa 12 — Testes finais + Docker**
-3. **Etapa 13 — Frontend** — UI completa (hash visivel, link verify, grafico crash)
-4. **Etapa 14 — README final + entrega**
+2. **Etapa 13 — Frontend** — UI completa (hash visivel, link verify, grafico crash)
+3. **Etapa 14 — README final + entrega**
 
 ## Requisitos Obrigatorios
 
@@ -291,13 +319,13 @@ curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/jso
 - [x] Comunicacao assincrona via RabbitMQ (contratos + pub/sub step 04; gameplay na 08)
 - [x] Gameplay completo (apostar, multiplicador, cashout, crash, liquidacao via broker)
 - [x] WebSocket server-to-client
-- [ ] Dinheiro sem ponto flutuante, saldo nunca negativo
+- [x] Dinheiro sem ponto flutuante, saldo nunca negativo (BigInt/`amountCents` string; unit money-cents + wallet)
 - [x] Keycloak/OIDC (realm importado; login UI no step 15)
 - [x] Backend valida JWT
 - [ ] Frontend funcional
 - [ ] Docker Compose executavel por `bun run docker:up`
 - [x] Testes unitarios de dominio (Wallet + Game + Provably Fair; REST/gameplay nas etapas 07–08)
-- [ ] Testes E2E dos fluxos criticos
+- [x] Testes E2E dos fluxos criticos (Etapa 12 — `test:required:report` com infra)
 - [ ] README com instrucoes, decisoes, trade-offs e checklist
 
 ## Endpoints Planejados
