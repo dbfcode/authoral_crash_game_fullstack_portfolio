@@ -5,6 +5,8 @@ import { WalletEventHandlers } from './application/handlers/wallet-event.handler
 import { WalletService } from './application/wallet.service';
 import { WalletMessagingBootstrap } from './application/wallet-messaging.bootstrap';
 import { HealthController } from './presentation/health.controller';
+import { WalletController } from './presentation/wallet.controller';
+import { PlayerAuthGuard } from './presentation/auth/player-auth.guard';
 import { PostgresWalletRepository } from './infrastructure/persistence/postgres-wallet.repository';
 import { PostgresProcessedEventRepository } from './infrastructure/persistence/postgres-processed-event.repository';
 import {
@@ -20,8 +22,9 @@ import { RabbitMqConnection } from './infrastructure/messaging/rabbitmq.connecti
 import { runWalletMigrations } from './infrastructure/persistence/run-migrations';
 
 @Module({
-  controllers: [HealthController],
+  controllers: [HealthController, WalletController],
   providers: [
+    PlayerAuthGuard,
     {
       provide: PG_POOL,
       useFactory: async (): Promise<Pool> => {

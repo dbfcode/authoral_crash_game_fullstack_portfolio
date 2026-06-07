@@ -1,9 +1,11 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { DomainExceptionFilter } from './presentation/filters/domain-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('wallets');
-  await app.listen(4002);
+  app.useGlobalFilters(new DomainExceptionFilter());
+  await app.listen(process.env.WALLETS_PORT ?? 4002);
 }
 bootstrap();
