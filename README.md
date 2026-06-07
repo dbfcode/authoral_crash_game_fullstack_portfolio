@@ -85,21 +85,30 @@ Relatorios locais de teste ficam em `test-runs/` (gitignored), com `summary.json
 - [x] `amountCents` serializado como string no wire format
 - [x] Testes unitarios shared + messaging (40 testes no monorepo)
 
+### Etapa 05 - Game Domain
+
+- [x] Agregado `Round` com estados `betting`, `running`, `crashed`, `settled`
+- [x] Entidade `Bet` com status `active`, `cashed_out`, `lost`
+- [x] Value objects `MoneyCents`, `Multiplier` (centesimos, sem float)
+- [x] Limites de aposta R$ 1,00 – R$ 1.000,00; uma aposta por jogador/rodada
+- [x] Cashout com payout `aposta × multiplicador`; crash marca perdas
+- [x] Testes unitarios de dominio (31 novos; 34 no `@crash/games`)
+- [ ] Provably Fair e integracao broker (etapas 06 e 08)
+
 ### Proximas etapas
 
-1. **Game Domain** — Round, Bet, lifecycle
-4. **Provably Fair** — algoritmo e verificacao
-5. **REST APIs** — endpoints do jogo
-6. **Gameplay + Broker + Settlement** — integracao completa
-7. **WebSocket** — tempo real
-8. **Auth JWT** — Keycloak integration
-9. **Testes finais + Docker**
-10. **Frontend** — UI completa
-11. **README final + entrega**
+1. **Provably Fair** — algoritmo e verificacao
+2. **REST APIs** — endpoints do jogo
+3. **Gameplay + Broker + Settlement** — integracao completa
+4. **WebSocket** — tempo real
+5. **Auth JWT** — Keycloak integration
+6. **Testes finais + Docker**
+7. **Frontend** — UI completa
+8. **README final + entrega**
 
 ## Requisitos Obrigatorios
 
-- [ ] Game Service separado
+- [ ] Game Service separado (dominio concluido; REST/gameplay nas etapas 07–08)
 - [x] Wallet Service separado (dominio + persistencia; REST na etapa 07)
 - [x] Comunicacao assincrona via RabbitMQ (contratos + pub/sub step 04; gameplay na 08)
 - [ ] Gameplay completo (apostar, multiplicador, cashout, crash, liquidacao)
@@ -109,7 +118,7 @@ Relatorios locais de teste ficam em `test-runs/` (gitignored), com `summary.json
 - [ ] Backend valida JWT
 - [ ] Frontend funcional
 - [ ] Docker Compose executavel por `bun run docker:up`
-- [ ] Testes unitarios de dominio (Wallet concluido; Game e Provably Fair pendentes)
+- [x] Testes unitarios de dominio (Wallet + Game concluidos; Provably Fair na etapa 06)
 - [ ] Testes E2E dos fluxos criticos
 - [ ] README com instrucoes, decisoes, trade-offs e checklist
 
