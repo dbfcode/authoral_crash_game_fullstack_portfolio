@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useAuth } from '../auth/AuthProvider';
 import { ApiError } from '../api/client';
-import { cashOut, placeBet, verifyRound } from '../api/games';
+import { cashOut, placeBet } from '../api/games';
 import { useGameSocket } from '../hooks/useGameSocket';
+import { useRoundVerification } from '../hooks/useRoundVerification';
 import { useToast } from '../hooks/useToast';
 import { PlayerBar } from '../components/PlayerBar';
 import { MultiplierChart } from '../components/MultiplierChart';
@@ -11,20 +12,18 @@ import { BetControls } from '../components/BetControls';
 import { FairnessPanel } from '../components/FairnessPanel';
 import { RoundHistory } from '../components/RoundHistory';
 import { LiveBets } from '../components/LiveBets';
-import { VerifyModal } from '../components/VerifyModal';
 
 export function GamePage() {
   const { playerId, username, getToken, refreshWallet } = useAuth();
   const { game } = useGameSocket(true);
+  const verification = useRoundVerification({
+    roundId: game.roundId,
+    status: game.status,
+    revealedRoundSeed: game.revealedRoundSeed,
+  });
   const { showToast } = useToast();
   const [placing, setPlacing] = useState(false);
   const [cashingOut, setCashingOut] = useState(false);
-  const [verifyOpen, setVerifyOpen] = useState(false);
-  const [verifyLoading, setVerifyLoading] = useState(false);
-  const [verifyData, setVerifyData] = useState<Awaited<ReturnType<typeof verifyRound>> | null>(
-    null,
-  );
-  const [verifyError, setVerifyError] = useState<string | null>(null);
 
   const myBet = useMemo(() => {
     if (!playerId) {
@@ -67,24 +66,6 @@ export function GamePage() {
     }
   };
 
-  const handleVerify = async () => {
-    if (!game.roundId) {
-      return;
-    }
-    setVerifyOpen(true);
-    setVerifyLoading(true);
-    setVerifyError(null);
-    setVerifyData(null);
-    try {
-      const data = await verifyRound(game.roundId);
-      setVerifyData(data);
-    } catch (error) {
-      setVerifyError(error instanceof ApiError ? error.message : 'Falha ao verificar');
-    } finally {
-      setVerifyLoading(false);
-    }
-  };
-
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-4 p-4 pb-8">
       <PlayerBar />
@@ -118,22 +99,17 @@ export function GamePage() {
         </div>
         <div className="space-y-4">
           <FairnessPanel
+            status={game.status}
+            roundId={game.roundId}
             committedRoundHash={game.committedRoundHash}
+            nextRoundHash={game.nextRoundHash}
             revealedRoundSeed={game.revealedRoundSeed}
             crashPoint={game.crashPoint}
-            roundId={game.roundId}
-            onVerify={() => void handleVerify()}
+            verification={verification}
           />
           <RoundHistory items={game.history} />
         </div>
       </div>
-      <VerifyModal
-        open={verifyOpen}
-        loading={verifyLoading}
-        data={verifyData}
-        error={verifyError}
-        onClose={() => setVerifyOpen(false)}
-      />
     </div>
   );
 }
