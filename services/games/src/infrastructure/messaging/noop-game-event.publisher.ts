@@ -4,4 +4,6 @@ export class NoopGameEventPublisher implements GameEventPublisher {
   async publishBetPlacedRequested(): Promise<void> {}
 
   async publishCashoutRequested(): Promise<void> {}
+
+  async publishBetLostSettled(): Promise<void> {}
 }

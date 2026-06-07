@@ -6,6 +6,8 @@ import { GameQueryService } from './application/game-query.service';
 import { GameStateService } from './application/game-state.service';
 import { GameEventHandlers } from './application/handlers/game-event.handlers';
 import { RoundBootstrapService } from './application/round-bootstrap.service';
+import { RoundEngineService } from './application/round-engine.service';
+import { RoundLockService } from './application/round-lock.service';
 import { BetsController } from './presentation/bets.controller';
 import { HealthController } from './presentation/health.controller';
 import { RoundsController } from './presentation/rounds.controller';
@@ -108,6 +110,8 @@ const persistenceProviders = useInMemoryPersistence
     GameQueryService,
     GameCommandService,
     RoundBootstrapService,
+    RoundEngineService,
+    RoundLockService,
     PlayerAuthGuard,
     ...persistenceProviders,
   ],

@@ -1,4 +1,5 @@
 import {
+  BetLostSettledPayload,
   BetPlacedRequestedPayload,
   CashoutRequestedPayload,
 } from '@crash/shared';
@@ -11,6 +12,11 @@ export interface GameEventPublisher {
 
   publishCashoutRequested(
     payload: CashoutRequestedPayload,
+    correlationId: string,
+  ): Promise<void>;
+
+  publishBetLostSettled(
+    payload: BetLostSettledPayload,
     correlationId: string,
   ): Promise<void>;
 }

@@ -22,4 +22,13 @@ export class RabbitGameEventPublisher implements GameEventPublisher {
       correlationId,
     });
   }
+
+  async publishBetLostSettled(
+    payload: Parameters<GameEventPublisher['publishBetLostSettled']>[0],
+    correlationId: string,
+  ): Promise<void> {
+    await this.publisher.publish(EventTypes.BET_LOST_SETTLED, payload, {
+      correlationId,
+    });
+  }
 }
