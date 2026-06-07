@@ -59,7 +59,7 @@ export function buildFairnessChecks(data: VerifyRoundResponse): FairnessCheckIte
       explanation:
         'SHA-256(seed) deve ser igual ao hash publicado antes das apostas — prova que o resultado já estava fixado.',
       selfCheckHint:
-        'Confira você: após o crash, calcule SHA-256 da seed (hex, em detalhes técnicos) e compare com o hash que apareceu em "Rodada ao vivo" — devem ser idênticos.',
+        'Confira você: SHA-256(round seed) = round hash desta rodada (detalhes técnicos) — prova que o crash já estava fixado antes das apostas.',
       passed: hasSeed ? commitmentPassed(data) : null,
     },
     {
@@ -68,6 +68,8 @@ export function buildFairnessChecks(data: VerifyRoundResponse): FairnessCheckIte
       explanation: data.crashPoint
         ? `HMAC(seed, nonce) recalculado deve bater com ${data.crashPoint}x exibido no crash.`
         : 'HMAC(seed, nonce) recalculado deve bater com o multiplicador do crash.',
+      selfCheckHint:
+        'Recalcule com seed + nonce (detalhes técnicos) e compare com o crash acima — veja "Como verificar você mesmo".',
       passed: hasSeed ? data.crashValid : null,
     },
     {
@@ -88,4 +90,17 @@ export function verificationSummary(data: VerifyRoundResponse): string {
     return `Rodada verificada — crash ${data.crashPoint}x`;
   }
   return 'Verificação com falhas';
+}
+
+/** Passos curtos para o jogador reproduzir a comprovação manualmente. */
+export function buildSelfVerifySteps(data: VerifyRoundResponse): string[] {
+  const nonce = String(data.nonce);
+  const clientPart = data.clientSeed ? `${data.clientSeed}:${nonce}` : `:${nonce}`;
+
+  return [
+    `Antes das apostas: use o hash publicado (round hash) exibido acima nesta comprovação. O crash ainda não podia ser alterado.`,
+    `Depois do crash: use a seed completa (logo acima). Calcule SHA-256(seed) em hex — o resultado deve ser idêntico ao round hash.`,
+    `Crash point: HMAC-SHA256 com chave = seed e mensagem "${clientPart}" (UTF-8). Dos 64 hex do digest, pegue os 13 primeiros como número; aplique a fórmula v1-chain (instantâneo 1,00x se divisível por 33; senão multiplicador derivado, teto 100x). Deve bater com ${data.crashPoint}x.`,
+    `Cadeia (opcional): o next hash desta rodada deve ser o round hash da rodada seguinte.`,
+  ];
 }

@@ -3,11 +3,11 @@ import type { FairnessVerifications, VerificationEntry } from '../hooks/useFairn
 import type { VerifyRoundResponse } from '../api/games';
 import {
   buildFairnessChecks,
+  buildSelfVerifySteps,
   fairnessPhaseLabel,
   translateVerifyReason,
   verificationSummary,
 } from '../utils/fairness-labels';
-import { truncateHash } from '../utils/money';
 
 type Props = {
   status: string;
@@ -56,18 +56,15 @@ export function FairnessPanel({
         <p className="text-xs font-medium text-gray-400">Rodada ao vivo</p>
         <div>
           <p className="text-xs text-gray-500">Hash publicado (antes das apostas)</p>
-          <p
-            className="break-all font-mono text-sm text-white"
-            title={committedRoundHash || undefined}
-          >
-            {committedRoundHash ? truncateHash(committedRoundHash, 12, 8) : '—'}
+          <p className="break-all font-mono text-[11px] leading-relaxed text-white">
+            {committedRoundHash || '—'}
           </p>
         </div>
         {nextRoundHash ? (
           <div>
             <p className="text-xs text-gray-500">Próximo compromisso (cadeia)</p>
-            <p className="font-mono text-xs text-gray-300" title={nextRoundHash}>
-              {truncateHash(nextRoundHash, 10, 6)}
+            <p className="break-all font-mono text-[11px] leading-relaxed text-gray-300">
+              {nextRoundHash}
             </p>
           </div>
         ) : null}
@@ -182,11 +179,17 @@ function VerificationDetail({
           {verifyData.crashPoint ? (
             <p className="text-lg font-bold tabular-nums text-white">{verifyData.crashPoint}x</p>
           ) : null}
+          <div>
+            <p className="text-xs text-gray-500">Hash publicado (round hash)</p>
+            <p className="break-all font-mono text-[11px] leading-relaxed text-white">
+              {verifyData.roundHash}
+            </p>
+          </div>
           {verifyData.roundSeed ? (
             <div>
-              <p className="text-xs text-gray-500">Seed revelada</p>
-              <p className="font-mono text-xs text-casino-purple" title={verifyData.roundSeed}>
-                {truncateHash(verifyData.roundSeed, 10, 6)}
+              <p className="text-xs text-gray-500">Seed revelada (completa)</p>
+              <p className="break-all font-mono text-[11px] leading-relaxed text-casino-purple">
+                {verifyData.roundSeed}
               </p>
             </div>
           ) : null}
@@ -207,6 +210,7 @@ function VerificationDetail({
           {reasonPt && !verifyData.valid ? (
             <p className="text-xs text-casino-danger">{reasonPt}</p>
           ) : null}
+          <SelfVerifyGuide data={verifyData} />
           <button
             type="button"
             onClick={() => setDetailsOpen((open) => !open)}
@@ -220,6 +224,23 @@ function VerificationDetail({
         <p className="text-xs text-gray-500">Consultando GET /games/rounds/:id/verify…</p>
       ) : null}
     </div>
+  );
+}
+
+function SelfVerifyGuide({ data }: { data: VerifyRoundResponse }) {
+  const steps = buildSelfVerifySteps(data);
+
+  return (
+    <details className="rounded-md border border-white/5 bg-black/10 px-2 py-1.5 text-xs text-gray-500">
+      <summary className="cursor-pointer select-none text-casino-purple hover:underline">
+        Como verificar você mesmo
+      </summary>
+      <ol className="mt-2 list-decimal space-y-2 pl-4 leading-relaxed text-gray-400">
+        {steps.map((step) => (
+          <li key={step.slice(0, 24)}>{step}</li>
+        ))}
+      </ol>
+    </details>
   );
 }
 

@@ -34,6 +34,7 @@ export type VerifyRoundResponse = {
   roundSeed: string;
   nextRoundHash: string | null;
   previousRoundHash?: string;
+  clientSeed?: string;
   crashPoint: string;
   nonce: number;
   algorithmVersion: string;

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import {
   buildFairnessChecks,
+  buildSelfVerifySteps,
   fairnessPhaseLabel,
   translateVerifyReason,
   verificationSummary,
@@ -51,5 +52,13 @@ describe('fairness-labels', () => {
   it('summarizes verification state', () => {
     expect(verificationSummary(sampleVerify({ roundSeed: '' }))).toContain('Aguardando');
     expect(verificationSummary(sampleVerify())).toContain('2.50x');
+  });
+
+  it('builds self-verify steps with seed and nonce', () => {
+    const steps = buildSelfVerifySteps(sampleVerify({ nonce: 3 }));
+    expect(steps).toHaveLength(4);
+    expect(steps[1]).toContain('SHA-256');
+    expect(steps[2]).toContain(':3');
+    expect(steps[2]).toContain('2.50x');
   });
 });
