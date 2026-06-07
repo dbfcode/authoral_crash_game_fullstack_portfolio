@@ -15,10 +15,10 @@ export async function createWallet(token: string): Promise<WalletResponse> {
 
 export async function ensureWallet(token: string): Promise<WalletResponse> {
   try {
-    return await getMyWallet(token);
+    return await createWallet(token);
   } catch (error) {
-    if (error instanceof ApiError && error.status === 404) {
-      return createWallet(token);
+    if (error instanceof ApiError && error.status === 409) {
+      return getMyWallet(token);
     }
     throw error;
   }
