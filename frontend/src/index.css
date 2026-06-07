@@ -1,0 +1,13 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-casino-bg: #0f0f14;
+  --color-casino-panel: #1a1a24;
+  --color-casino-accent: #22c55e;
+  --color-casino-danger: #ef4444;
+  --color-casino-purple: #a855f7;
+}
+
+body {
+  @apply bg-casino-bg text-gray-100 antialiased min-h-screen;
+}

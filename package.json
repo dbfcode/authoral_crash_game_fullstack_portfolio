@@ -3,12 +3,14 @@
   "private": true,
   "workspaces": [
     "services/*",
-    "packages/*"
+    "packages/*",
+    "frontend"
   ],
   "scripts": {
     "docker:up": "docker compose up -d --build",
     "docker:down": "docker compose down",
     "docker:prune": "docker compose down -v --rmi all",
+    "dev:frontend": "bun --cwd frontend dev",
     "test": "bun run --workspaces test",
     "test:unit": "bun run --workspaces test:unit",
     "test:e2e": "bun run --workspaces test:e2e",
