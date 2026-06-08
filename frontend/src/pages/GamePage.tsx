@@ -39,19 +39,24 @@ export function GamePage() {
     if (!myBet || !playerId) {
       return;
     }
-    if (
-      myBet.status !== lastBetStatusRef.current &&
-      (myBet.status === 'lost' || myBet.status === 'cashed_out')
-    ) {
-      setLastRoundResult({
-        status: myBet.status,
-        amountCents: myBet.amountCents,
-        payoutCents: myBet.payoutCents,
-        cashoutMultiplier: myBet.cashoutMultiplier,
-      });
-      void refreshWallet();
+    if (myBet.status !== lastBetStatusRef.current) {
+      if (
+        myBet.status === 'active' ||
+        myBet.status === 'lost' ||
+        myBet.status === 'cashed_out'
+      ) {
+        void refreshWallet();
+      }
+      if (myBet.status === 'lost' || myBet.status === 'cashed_out') {
+        setLastRoundResult({
+          status: myBet.status,
+          amountCents: myBet.amountCents,
+          payoutCents: myBet.payoutCents,
+          cashoutMultiplier: myBet.cashoutMultiplier,
+        });
+      }
+      lastBetStatusRef.current = myBet.status;
     }
-    lastBetStatusRef.current = myBet.status;
   }, [myBet, playerId, refreshWallet]);
 
   const handleBet = async (amountCents: string) => {
@@ -65,7 +70,6 @@ export function GamePage() {
       setLastRoundResult(null);
       lastBetStatusRef.current = null;
       showToast('Aposta enviada — aguardando confirmação', 'info');
-      await refreshWallet();
     } catch (error) {
       showToast(error instanceof ApiError ? error.message : 'Falha ao apostar');
     } finally {
