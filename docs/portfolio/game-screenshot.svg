@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">
+  <rect width="1200" height="675" fill="#0a0a0f"/>
+  <rect x="40" y="40" width="1120" height="595" rx="16" fill="#12121a" stroke="#00ffa3" stroke-opacity="0.25"/>
+  <text x="600" y="120" fill="#ffffff" font-family="system-ui,sans-serif" font-size="42" font-weight="700" text-anchor="middle">Crash Game</text>
+  <text x="600" y="280" fill="#00ffa3" font-family="system-ui,sans-serif" font-size="96" font-weight="800" text-anchor="middle">2.45x</text>
+  <text x="600" y="340" fill="#9ca3af" font-family="system-ui,sans-serif" font-size="22" text-anchor="middle">Real-time multiplier · Provably fair · Live bets</text>
+  <rect x="120" y="420" width="320" height="140" rx="12" fill="#1a1a24" stroke="#ffffff" stroke-opacity="0.08"/>
+  <rect x="440" y="420" width="320" height="140" rx="12" fill="#1a1a24" stroke="#ffffff" stroke-opacity="0.08"/>
+  <rect x="760" y="420" width="320" height="140" rx="12" fill="#1a1a24" stroke="#ffffff" stroke-opacity="0.08"/>
+  <text x="280" y="470" fill="#6b7280" font-family="system-ui,sans-serif" font-size="16" text-anchor="middle">Game</text>
+  <text x="600" y="470" fill="#6b7280" font-family="system-ui,sans-serif" font-size="16" text-anchor="middle">History</text>
+  <text x="920" y="470" fill="#6b7280" font-family="system-ui,sans-serif" font-size="16" text-anchor="middle">Fairness</text>
+  <text x="600" y="640" fill="#4b5563" font-family="system-ui,sans-serif" font-size="14" text-anchor="middle">Replace with docs/portfolio/game-screenshot.png</text>
+</svg>
