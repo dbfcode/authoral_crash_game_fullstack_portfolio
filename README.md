@@ -10,7 +10,9 @@
 
 **Crash Game** é um jogo multiplayer em tempo real no estilo iGaming: o multiplicador sobe a partir de 1,00x e pode parar a qualquer instante. Quem apostou precisa **sacar antes do crash** para ganhar; quem não sacou perde a aposta.
 
-Este repositório é um **produto completo, desenvolvido do zero por mim**: crash multiplayer em tempo real com motor próprio, carteira desacoplada, login seguro (OIDC), provably fair e sincronização ao vivo. Foi estruturado a partir de um **brief de produto** no universo iGaming — **trabalho autoral e independente**, não mockup, fork ou CRUD de demonstração.
+Este repositório é um **produto completo, desenvolvido do zero por mim**: crash multiplayer em tempo real com **motor próprio**, carteira desacoplada, login seguro (OIDC), provably fair e sincronização ao vivo. Foi estruturado a partir de um **brief de produto** no universo iGaming — **trabalho autoral e independente**, não mockup, fork ou CRUD de demonstração.
+
+Na prática de iGaming, muitas casas **integram jogos de provedores externos**; aqui o escopo foi mais amplo: além da camada de plataforma (carteira, auth, gateway, frontend), **o próprio jogo foi construído** — motor de rodadas, provably fair e sincronização multiplayer. Arquitetura distribuída com **Game e Wallet services** (NestJS + Bun), mensageria **RabbitMQ**, **PostgreSQL**, **Keycloak**, **Kong** e tempo real via **Socket.IO** — visão de ponta a ponta do fluxo, não só da integração. **Identidade com Keycloak (OIDC/JWT)** — auth desacoplada e padrão de mercado, sem auth caseira; **Kong** como gateway único para as APIs; **WebSocket** para push em tempo real; **multiplayer** com o mesmo multiplicador, hash e apostas em todos os clientes.
 
 **Por que isso importa no mundo real**
 
@@ -22,8 +24,9 @@ Este repositório é um **produto completo, desenvolvido do zero por mim**: cras
 
 **Destaques**
 
-- Login OIDC (Keycloak) e carteira com saldo inicial
-- Apostas, cash out e feedback de ganho/perda em tempo real
+- Motor de jogo próprio — além da integração típica com provedores
+- Auth OIDC (Keycloak) · Gateway Kong · Multiplayer sincronizado via WebSocket
+- Carteira com saldo inicial, apostas, cash out e feedback de ganho/perda em tempo real
 - Painel de fairness com verificação das últimas rodadas
 - Testes automatizados (domínio, broker, E2E de gameplay)
 
@@ -36,6 +39,8 @@ Este repositório é um **produto completo, desenvolvido do zero por mim**: cras
 
 This repository is a **complete product, built from scratch by me**: real-time multiplayer crash with a custom round engine, decoupled wallet, secure OIDC login, provably fair rounds, and live sync. It was shaped from a **product brief** in the iGaming space — **independent, original work**, not a mockup, fork, or demo CRUD.
 
+In typical iGaming, operators often **integrate third-party game providers**; here the scope goes further: beyond the platform layer (wallet, auth, gateway, frontend), **the game itself was built** — round engine, provably fair, and multiplayer sync. Distributed architecture with **Game and Wallet services** (NestJS + Bun), **RabbitMQ** messaging, **PostgreSQL**, **Keycloak**, **Kong**, and real-time **Socket.IO** — end-to-end flow ownership, not integration alone. **Keycloak (OIDC/JWT)** for decoupled, industry-standard identity; **Kong** as a single API gateway; **WebSocket** for real-time server push; **multiplayer** with the same multiplier, hash, and bets across every client.
+
 **Why it matters in the real world**
 
 - **Precise money handling** — integer cents, avoiding floating-point rounding issues common in poorly modeled financial systems.
@@ -46,8 +51,9 @@ This repository is a **complete product, built from scratch by me**: real-time m
 
 **Highlights**
 
-- OIDC login (Keycloak) and wallet with initial balance
-- Bets, cash out, and win/loss feedback in real time
+- Custom game engine — beyond typical third-party provider integration
+- OIDC auth (Keycloak) · Kong gateway · Multiplayer sync over WebSocket
+- Wallet with initial balance, bets, cash out, and win/loss feedback in real time
 - Fairness panel with verification of past rounds
 - Automated tests (domain, broker, gameplay E2E)
 
