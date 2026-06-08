@@ -1,6 +1,6 @@
 # Crash Game — Real-Time Multiplayer Platform
 
-![Crash Game screenshot](docs/portfolio/game-screenshot.svg)
+![Crash Game screenshot](docs/portfolio/game-screenshot.png)
 
 <table>
 <tr>
@@ -55,7 +55,7 @@ This repository is a **full product** — UI, game engine, digital wallet, secur
 </tr>
 </table>
 
-*Built as a full-stack take-home challenge; maintained as a portfolio piece.*
+_Built as a full-stack take-home challenge; maintained as a portfolio piece._
 
 ---
 
@@ -63,7 +63,7 @@ This repository is a **full product** — UI, game engine, digital wallet, secur
 
 **PT:** `bun install` → `bun run docker:up` → abra [http://localhost:3000](http://localhost:3000) → login **`player`** / **`player123`** (saldo inicial R$ 5.000).
 
-**EN:** Same steps. On first boot, wait **~1–2 min** for images and Keycloak; the UI shows *Starting application…* until backends are ready.
+**EN:** Same steps. On first boot, wait **~1–2 min** for images and Keycloak; the UI shows _Starting application…_ until backends are ready.
 
 ```bash
 bun install
@@ -78,7 +78,6 @@ bun run dev:frontend     # Local Vite :3000 (backends via Docker)
 
 ### Demo access
 
-
 | Item            | Value                                                                  |
 | --------------- | ---------------------------------------------------------------------- |
 | Login           | `player` / `player123`                                                 |
@@ -87,7 +86,6 @@ bun run dev:frontend     # Local Vite :3000 (backends via Docker)
 | WebSocket       | [http://localhost:4001/games](http://localhost:4001/games) (Socket.IO) |
 | Keycloak        | [http://localhost:8080](http://localhost:8080) — realm `crash-game`    |
 | Initial balance | R$ 5,000 (`WALLETS_INITIAL_BALANCE_CENTS=500000`)                      |
-
 
 OIDC (authorization code + PKCE) → `POST /wallets` creates the wallet on first login.
 
@@ -116,7 +114,6 @@ OIDC (authorization code + PKCE) → `POST /wallets` creates the wallet on first
 
 ## Stack
 
-
 | Layer     | Technology                   |
 | --------- | ---------------------------- |
 | Runtime   | Bun 1.3                      |
@@ -127,7 +124,6 @@ OIDC (authorization code + PKCE) → `POST /wallets` creates the wallet on first
 | Auth      | Keycloak (OIDC / JWT)        |
 | Real-time | Socket.IO                    |
 | Frontend  | React 19, Vite, Tailwind     |
-
 
 Shared contracts: `packages/shared` (`@crash/shared`).
 
@@ -165,17 +161,14 @@ Base URL: `http://localhost:8000`
 
 ### Wallet — `/wallets`
 
-
 | Method | Endpoint      | Auth | Description                            |
 | ------ | ------------- | ---- | -------------------------------------- |
 | `POST` | `/wallets`    | Yes  | Create wallet for authenticated player |
 | `GET`  | `/wallets/me` | Yes  | Balance and wallet data                |
 
-
 Credit/debit are **not** exposed via REST — they flow through RabbitMQ.
 
 ### Game — `/games`
-
 
 | Method | Endpoint                        | Auth | Description                                |
 | ------ | ------------------------------- | ---- | ------------------------------------------ |
@@ -187,7 +180,6 @@ Credit/debit are **not** exposed via REST — they flow through RabbitMQ.
 | `POST` | `/games/bet`                    | Yes  | Place bet on current round                 |
 | `POST` | `/games/bet/cashout`            | Yes  | Cash out at current multiplier             |
 
-
 ---
 
 ## WebSocket
@@ -195,7 +187,6 @@ Credit/debit are **not** exposed via REST — they flow through RabbitMQ.
 Connection: `http://localhost:4001/games` · Socket.IO namespace `/games`.
 
 Server → client only; player actions use REST.
-
 
 | Event                   | Main fields                                                         | Seed revealed? |
 | ----------------------- | ------------------------------------------------------------------- | -------------- |
@@ -210,7 +201,6 @@ Server → client only; player actions use REST.
 | `bet:cashout`           | `betId`, `multiplier`, `payoutCents`, `status`                      | No             |
 | `bet:removed`           | `betId`, `roundId`, `playerId`                                      | No             |
 
-
 Typed payloads: `packages/shared/src/websocket/`.
 
 ---
@@ -221,11 +211,9 @@ Algorithm: `algorithmVersion: "v1-chain"` · implementation: `services/games/src
 
 ### Commit (before the round)
 
-
 | Public                                      | Secret (server)        |
 | ------------------------------------------- | ---------------------- |
 | `committedRoundHash` = SHA-256(`roundSeed`) | `roundSeed` from chain |
-
 
 Exposed via `round:betting-started`, `round:snapshot`, `GET /games/rounds/current`, and the fairness UI panel. The seed **never** leaks before crash (covered by E2E `websocket-realtime.spec.ts`).
 
@@ -248,8 +236,8 @@ HMAC-SHA256(roundSeed, "${clientSeed}:${nonce}") → 13 hex → Bustabit-style f
 ### Hash chain (anti-tampering)
 
 1. Pre-generated `SeedChain` (10,000 seeds) persisted in `chain_state`.
-2. Round *i*: publishes `roundHash`; after crash reveals `roundSeed` and `nextRoundHash = SHA-256(seed[i+1])`.
-3. Audit: `nextRoundHash` of round *i* must equal `committedRoundHash` of round *i+1* (`chainValid` in `/verify`).
+2. Round _i_: publishes `roundHash`; after crash reveals `roundSeed` and `nextRoundHash = SHA-256(seed[i+1])`.
+3. Audit: `nextRoundHash` of round _i_ must equal `committedRoundHash` of round _i+1_ (`chainValid` in `/verify`).
 
 **MVP limitation:** pre-generated chain at startup — changing a past seed invalidates the whole chain; not ad-hoc per-round commit–reveal.
 
@@ -257,11 +245,13 @@ HMAC-SHA256(roundSeed, "${clientSeed}:${nonce}") → 13 hex → Bustabit-style f
 
 1. During betting, note `committedRoundHash` (fairness panel or WebSocket).
 2. After crash:
-  ```bash
-   curl -s http://localhost:8000/games/rounds/{roundId}/verify | jq .
-  ```
+
+```bash
+ curl -s http://localhost:8000/games/rounds/{roundId}/verify | jq .
+```
+
 3. Expect: `"valid": true`, `"crashValid": true`, `"chainValid": true`.
-4. UI: fairness panel auto-verifies recent rounds; *How to verify yourself* dropdown explains SHA-256 + HMAC steps.
+4. UI: fairness panel auto-verifies recent rounds; _How to verify yourself_ dropdown explains SHA-256 + HMAC steps.
 5. Local recalculation: `verifyRound` and `computeCrashPoint` in `services/games/src/domain/provably-fair/`.
 
 ---
@@ -336,7 +326,6 @@ Local dev env files: copy from `frontend/.env.example`, `services/games/.env.exa
 
 ## Trade-offs and limitations
 
-
 | Topic           | Decision                                                              |
 | --------------- | --------------------------------------------------------------------- |
 | Actions vs push | REST for actions; WebSocket server→client only                        |
@@ -348,19 +337,16 @@ Local dev env files: copy from `frontend/.env.example`, `services/games/.env.exa
 | WebSocket       | Direct `:4001`; Kong upgrade not validated as primary                 |
 | Betting window  | Default 7s (`GAMES_BETTING_DURATION_MS` / `VITE_BETTING_DURATION_MS`) |
 
-
 **Reset state:** `docker compose down` keeps Postgres. Use `bun run docker:prune` or `docker compose down -v` for a clean slate.
 
 ---
 
 ## About this project
 
-
 |            |                                                                                                                                                                                             |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **PT**     | Projeto full-stack inspirado em desafio técnico de iGaming (crash game). Hoje funciona como **portfolio**: arquitetura distribuída, UX de produto e auditoria de fairness.                  |
 | **EN**     | Full-stack project inspired by an iGaming-style technical challenge (crash game). Now maintained as a **portfolio** piece: distributed architecture, product UX, and fairness auditability. |
 | **Author** | [Diêgo Ferreira](https://github.com/dbfcode)                                                                                                                                                |
-
 
 **Code references:** `services/games/src/domain/provably-fair/` · `packages/shared/`
